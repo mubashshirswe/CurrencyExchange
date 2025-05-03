@@ -1,0 +1,33 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go build directories
+bin/
+/bin/
+build*
+main
+
+.DS_Store
+Thumbs.db
+
+*.log
+
+# IDE/editor stuff
+.vscode/
+.idea/
+*.swp
+
+# Environment/config
+# docker-compose*.yml
+.env
+.env.local
+config.yaml
+
+# Cache
+*.cache
