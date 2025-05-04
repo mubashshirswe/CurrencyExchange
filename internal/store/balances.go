@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"errors"
 )
 
 type Balance struct {
@@ -11,6 +12,7 @@ type Balance struct {
 	UserId    int64  `json:"user_id"`
 	InOutLay  int64  `json:"in_out_lay"`
 	OutInLay  int64  `json:"out_in_lay"`
+	CompanyId int64  `json:"company_id"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
 }
@@ -20,8 +22,8 @@ type BalanceStorage struct {
 }
 
 func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
-	query := `INSERT INTO balances(balance, user_id, in_out_lay, out_in_lay)
-				VALUES($1, $2, $3, $4) RETURNING id, created_at`
+	query := `INSERT INTO balances(balance, user_id, in_out_lay, out_in_lay, company_id)
+				VALUES($1, $2, $3, $4, $5) RETURNING id, created_at`
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -29,7 +31,8 @@ func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
 		balance.Balance,
 		balance.UserId,
 		balance.InOutLay,
-		balance.OutInLay).Scan(
+		balance.OutInLay,
+		balance.CompanyId).Scan(
 		&balance.ID,
 		&balance.CreatedAt,
 	)
@@ -42,21 +45,104 @@ func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
 }
 
 func (s *BalanceStorage) GetAll(ctx context.Context) ([]Balance, error) {
+	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, created_at, updated_at FROM balances`
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	return nil, nil
+	var balances []Balance
+	for rows.Next() {
+		balance := &Balance{}
+		err := rows.Scan(
+			&balance.ID,
+			&balance.Balance,
+			&balance.UserId,
+			&balance.InOutLay,
+			&balance.OutInLay,
+			&balance.CompanyId,
+			&balance.CreatedAt,
+			&balance.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		balances = append(balances, *balance)
+	}
+
+	return balances, nil
 }
 
 func (s *BalanceStorage) GetByUserId(ctx context.Context, userId *int64) ([]Balance, error) {
+	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, created_at, updated_at FROM balances WHERE user_id = $1`
+	rows, err := s.db.QueryContext(ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
 
-	return nil, nil
+	var balances []Balance
+	for rows.Next() {
+		balance := &Balance{}
+		err := rows.Scan(
+			&balance.ID,
+			&balance.Balance,
+			&balance.UserId,
+			&balance.InOutLay,
+			&balance.OutInLay,
+			&balance.CompanyId,
+			&balance.CreatedAt,
+			&balance.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		balances = append(balances, *balance)
+	}
+
+	return balances, nil
 }
 
 func (s *BalanceStorage) GetById(ctx context.Context, id *int64) (*Balance, error) {
+	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, created_at, updated_at FROM balances WHERE id = $1`
+	balance := &Balance{}
 
-	return nil, nil
+	err := s.db.QueryRowContext(ctx, query, id).Scan(&balance.ID,
+		&balance.ID,
+		&balance.Balance,
+		&balance.UserId,
+		&balance.InOutLay,
+		&balance.OutInLay,
+		&balance.CompanyId,
+		&balance.CreatedAt,
+		&balance.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return balance, nil
 }
 
 func (s *BalanceStorage) Update(ctx context.Context, balance *Balance) error {
+	query := `UPDATE balances SET balance = $1, in_out_lay = $2, out_in_lay = $3
+		WHERE id = $4`
+
+	rows, err := s.db.ExecContext(ctx, query, balance.Balance, balance.InOutLay, balance.OutInLay)
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return errors.New("NOT FOUND")
+	}
 
 	return nil
 }

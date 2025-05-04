@@ -26,16 +26,11 @@ services:
     volumes:
       - db-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # Expose PostgreSQL port externally on 5434
+      - "5432:5432"  
     networks:
       - app-network
     restart: always
-    # healthcheck:
-    #   test: ["CMD", "pg_isready", "-U", "qweqweqeqe12312314"]
-    #   interval: 10s
-    #   retries: 5
-    #   start_period: 10s
-    #   timeout: 5s
+
 
   cache:
     image: redis:6.2-alpine

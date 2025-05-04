@@ -11,6 +11,7 @@ type Currency struct {
 	Name      string `json:"name"`
 	Sell      *int64 `json:"sell"`
 	Buy       *int64 `json:"buy"`
+	CompanyId int64  `json:"company_id"`
 	CreatedAt string `json:"created_at"`
 }
 
@@ -19,8 +20,9 @@ type CurrencyStorage struct {
 }
 
 func (s *CurrencyStorage) Create(ctx context.Context, currnecy *Currency) error {
-	query := `INSERT INTO currencies(name, sell, buy) VALUES($1, $2, $3) RETURNING id, created_at`
-	err := s.db.QueryRowContext(ctx, query, currnecy.Name, currnecy.Sell, currnecy.Buy).Scan(&currnecy.ID, &currnecy.CreatedAt)
+	query := `INSERT INTO currencies(name, sell, buy, company_id) VALUES($1, $2, $3, $4) RETURNING id, created_at`
+	err := s.db.QueryRowContext(ctx, query, currnecy.Name, currnecy.Sell, currnecy.Buy, currnecy.CompanyId).Scan(
+		&currnecy.ID, &currnecy.CreatedAt)
 	if err != nil {
 		return err
 	}
@@ -28,11 +30,9 @@ func (s *CurrencyStorage) Create(ctx context.Context, currnecy *Currency) error 
 }
 
 func (s *CurrencyStorage) GetAll(ctx context.Context) ([]Currency, error) {
-	query := `SELECT * FROM currencies`
+	query := `SELECT id, name, sell, buy, company_id, created_at FROM currencies`
 	var currencies []Currency
-	rows, err := s.db.QueryContext(
-		ctx,
-		query)
+	rows, err := s.db.QueryContext(ctx, query)
 
 	if err != nil {
 		return nil, err
@@ -46,6 +46,7 @@ func (s *CurrencyStorage) GetAll(ctx context.Context) ([]Currency, error) {
 			&currnecy.Name,
 			&currnecy.Sell,
 			&currnecy.Buy,
+			&currnecy.CompanyId,
 			&currnecy.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -57,13 +58,14 @@ func (s *CurrencyStorage) GetAll(ctx context.Context) ([]Currency, error) {
 }
 
 func (s *CurrencyStorage) Update(ctx context.Context, currecy *Currency) error {
-	query := `UPDATE currencies SET name = $1, sell = $2, buy = $3 RETURNING id`
+	query := `UPDATE currencies SET name = $1, sell = $2, buy = $3 WHERE id = $4`
 	rows, err := s.db.ExecContext(
 		ctx,
 		query,
 		currecy.Name,
 		currecy.Sell,
 		currecy.Buy,
+		currecy.ID,
 	)
 
 	if err != nil {
@@ -82,7 +84,26 @@ func (s *CurrencyStorage) Update(ctx context.Context, currecy *Currency) error {
 	return nil
 }
 
-func (s *CurrencyStorage) Delete(ctx context.Context) ([]Currency, error) {
+func (s *CurrencyStorage) Delete(ctx context.Context, id *int64) error {
+	query := `DELETE FROM currencies WHERE id = $1`
+	rows, err := s.db.ExecContext(
+		ctx,
+		query,
+		id,
+	)
 
-	return nil, nil
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return errors.New("NOT FOUND")
+	}
+
+	return nil
 }

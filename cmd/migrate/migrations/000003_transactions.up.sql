@@ -9,6 +9,8 @@ create table if not exists transactions(
     to_city_id bigint not null,
     receiver_name varchar(255) not null,
     receiver_phone varchar(9) not null,
+    company_id bigint not null,
+    balance_id bigint not null,
     details varchar(255) not null,
     type bigint not null,
     created_at timestamp(0) with time zone not null default now()
