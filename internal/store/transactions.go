@@ -138,15 +138,16 @@ func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transacti
 	return tr, nil
 }
 
-func (s *TransactionStorage) GetAll(ctx context.Context) ([]Transaction, error) {
+func (s *TransactionStorage) GetAllByBalanceId(ctx context.Context, balance_id *int64) ([]Transaction, error) {
 	query := `SELECT id, amount, service_fee, from_currency_type_id,
 				to_currency_type_id, sender_id, from_city_id, to_city_id,
 				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id FROM transactions ORDER BY created_at DESC`
+				created_at, balance_id FROM transactions WHERE balance_id = $1 ORDER BY created_at DESC`
 	var transactions []Transaction
 	rows, err := s.db.QueryContext(
 		ctx,
 		query,
+		balance_id,
 	)
 
 	if err != nil {
@@ -183,11 +184,11 @@ func (s *TransactionStorage) GetAll(ctx context.Context) ([]Transaction, error) 
 	return transactions, nil
 }
 
-func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string) ([]Transaction, error) {
+func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string, balance_id *int64) ([]Transaction, error) {
 	query := `SELECT id, amount, service_fee, from_currency_type_id,
 				to_currency_type_id, sender_id, from_city_id, to_city_id,
 				receiver_name, receiver_phone, details, type, company_id, balance_id,
-				created_at FROM transactions WHERE created_at between $1 and $2`
+				created_at FROM transactions WHERE created_at between $1 and $2 and $3`
 	var transactions []Transaction
 
 	rows, err := s.db.QueryContext(
@@ -195,6 +196,7 @@ func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to s
 		query,
 		from,
 		to,
+		balance_id,
 	)
 
 	if err != nil {

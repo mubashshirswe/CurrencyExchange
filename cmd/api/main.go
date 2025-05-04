@@ -2,7 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"github.com/mubashshir3767/currencyExchange/internal/db"
 	"github.com/mubashshir3767/currencyExchange/internal/env"
@@ -66,4 +69,14 @@ func main() {
 	// Mount routes and run the server
 	mux := app.mount()
 	log.Fatal(app.run(mux))
+}
+
+func GetIdFromContext(r *http.Request) int64 {
+	param := chi.URLParam(r, "id")
+
+	id, err := strconv.ParseInt(param, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return id
 }

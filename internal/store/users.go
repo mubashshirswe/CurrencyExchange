@@ -11,7 +11,6 @@ type User struct {
 	Username  string `json:"username"`
 	Phone     string `json:"phone"`
 	Role      int64  `json:"role"`
-	CompanyId int64  `json:"company_id"`
 	Password  string `json:"password"`
 	CreatedAt string `json:"created_at"`
 }

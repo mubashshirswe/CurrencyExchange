@@ -42,7 +42,3 @@ func (app *application) writeResponse(w http.ResponseWriter, status int, data an
 	}
 	return writeJSON(w, status, &envelop{Data: data})
 }
-
-func (app *application) writePaymeResponse(w http.ResponseWriter, status int, data any) error {
-	return writeJSON(w, status, data)
-}

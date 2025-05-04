@@ -13,12 +13,13 @@ import (
 type contextKey string
 
 const UserKey contextKey = "UserID"
+const EmployeeKey contextKey = "EmployeeID"
 
-func JWTCreate(secret []byte, userID int64) (string, error) {
+func JWTCreate(secret []byte, id int64, types string) (string, error) {
 	expiration := time.Second * time.Duration(env.GetInt("JWTExpirationInSeconds", 3600000))
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userID":    strconv.Itoa(int(userID)),
+		types:       strconv.Itoa(int(id)),
 		"expiredAt": time.Now().Add(expiration).Unix(),
 	})
 

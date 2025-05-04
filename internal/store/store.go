@@ -15,6 +15,15 @@ type Storage struct {
 		Delete(context.Context, *int64) error
 	}
 
+	Employees interface {
+		Login(context.Context, *Employee) error
+		Create(context.Context, *Employee) error
+		Update(context.Context, *Employee) error
+		GetAll(context.Context) ([]Employee, error)
+		GetById(context.Context, *int64) (*Employee, error)
+		Delete(context.Context, *int64) error
+	}
+
 	Balances interface {
 		Create(context.Context, *Balance) error
 		GetById(context.Context, *int64) (*Balance, error)
@@ -27,8 +36,8 @@ type Storage struct {
 		Create(context.Context, *Transaction) error
 		Update(context.Context, *Transaction) error
 		GetById(context.Context, *int64) (*Transaction, error)
-		GetAll(context.Context) ([]Transaction, error)
-		GetAllByDate(context.Context, string, string) ([]Transaction, error)
+		GetAllByBalanceId(context.Context, *int64) ([]Transaction, error)
+		GetAllByDate(context.Context, string, string, *int64) ([]Transaction, error)
 	}
 
 	Currencies interface {
@@ -61,5 +70,6 @@ func NewStorage(db *sql.DB) Storage {
 		Cities:       &CityStorage{db: db},
 		Balances:     &BalanceStorage{db: db},
 		Companies:    &CompanyStorage{db: db},
+		Employees:    &EmployeeStorage{db: db},
 	}
 }
