@@ -65,6 +65,27 @@ func (s *UserStorage) Login(ctx context.Context, user *User) error {
 	return nil
 }
 
+func (s *UserStorage) GetById(ctx context.Context, id *int64) (*User, error) {
+	query := `SELECT * FROM users WHERE id = $1`
+
+	user := &User{}
+
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Phone,
+		&user.Password,
+		&user.Role,
+		&user.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (s *UserStorage) GetAll(ctx context.Context) ([]User, error) {
 	query := `SELECT * FROM users`
 	var users []User

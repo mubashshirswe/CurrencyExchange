@@ -7,6 +7,7 @@ import (
 	"github.com/mubashshir3767/currencyExchange/internal/db"
 	"github.com/mubashshir3767/currencyExchange/internal/env"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/store/cache"
 )
 
 func main() {
@@ -33,6 +34,9 @@ func main() {
 		env: env.GetString("ENV", "PROD"),
 	}
 
+	rdb := cache.NewRedisClient(cfg.redisConfig.addr, cfg.redisConfig.pw, cfg.redisConfig.db)
+	log.Println("redis cache connection established")
+
 	// Initialize database connection
 	db, err := db.New(
 		cfg.db.addr,
@@ -50,11 +54,13 @@ func main() {
 
 	// Initialize store
 	store := store.NewStorage(db)
+	cacheStore := cache.NewRedisStorage(rdb)
 
 	// Initialize the application
 	app := application{
-		config: cfg,
-		store:  store,
+		config:     cfg,
+		store:      store,
+		cacheStore: cacheStore,
 	}
 
 	// Mount routes and run the server
