@@ -11,7 +11,6 @@ create table if not exists transactions(
     receiver_phone varchar(9) not null,
     details varchar(255) not null,
     type bigint not null,
-    received_time timestamp(0) with  default null,
-    delivered_time timestamp(0) with  default null
+    created_at timestamp(0) with time zone not null default now()
 )
 

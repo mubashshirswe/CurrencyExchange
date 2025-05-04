@@ -18,8 +18,7 @@ type Transaction struct {
 	ReceiverPhone      string  `json:"receiver_phone"`
 	Details            string  `json:"details"`
 	Type               int64   `json:"type"`
-	ReceivedTime       *string `json:"received_time"`
-	DeliveredTime      *string `json:"delivered_time"`
+	CreatedAt          *string `json:"created_at"`
 }
 
 type TransactionStorage struct {
@@ -27,21 +26,140 @@ type TransactionStorage struct {
 }
 
 func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error {
+	query := `INSERT INTO transactions(
+				amount, service_fee, from_currency_type_id,
+				to_currency_type_id, sender_id, from_city_id,
+				receiver_name, receiver_phone, details, type,
+				created_at) RETURNING id`
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		tr.Amount,
+		tr.ServiceFee,
+		tr.FromCurrencyTypeId,
+		tr.ToCurrencyTypeId,
+		tr.SenderId,
+		tr.FromCityId,
+		tr.ToCityId,
+		tr.ReceiverName,
+		tr.ReceiverPhone,
+		tr.Details,
+		tr.Type,
+		tr.CreatedAt,
+	).Scan(
+		&tr.ID,
+	)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transaction, error) {
+	query := `SELECT * FROM transactions WHERE id =$1`
+	tr := &Transaction{}
 
-	return nil, nil
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		tr.ID,
+	).Scan(
+		&tr.Amount,
+		&tr.ServiceFee,
+		&tr.FromCurrencyTypeId,
+		&tr.ToCurrencyTypeId,
+		&tr.SenderId,
+		&tr.FromCityId,
+		&tr.ToCityId,
+		&tr.ReceiverName,
+		&tr.ReceiverPhone,
+		&tr.Details,
+		&tr.Type,
+		&tr.CreatedAt,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tr, nil
 }
 
 func (s *TransactionStorage) GetAll(ctx context.Context) ([]Transaction, error) {
+	query := `SELECT * FROM transactions`
+	var transactions []Transaction
 
-	return nil, nil
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		tr := &Transaction{}
+		rows.Scan(
+			&tr.Amount,
+			&tr.ServiceFee,
+			&tr.FromCurrencyTypeId,
+			&tr.ToCurrencyTypeId,
+			&tr.SenderId,
+			&tr.FromCityId,
+			&tr.ToCityId,
+			&tr.ReceiverName,
+			&tr.ReceiverPhone,
+			&tr.Details,
+			&tr.Type,
+			&tr.CreatedAt,
+		)
+
+		transactions = append(transactions, *tr)
+	}
+
+	return transactions, nil
 }
 
 func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string) ([]Transaction, error) {
+	query := `SELECT * FROM transactions WHERE created_at between $1 and $2`
+	var transactions []Transaction
 
-	return nil, nil
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		from,
+		to,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		tr := &Transaction{}
+		rows.Scan(
+			&tr.Amount,
+			&tr.ServiceFee,
+			&tr.FromCurrencyTypeId,
+			&tr.ToCurrencyTypeId,
+			&tr.SenderId,
+			&tr.FromCityId,
+			&tr.ToCityId,
+			&tr.ReceiverName,
+			&tr.ReceiverPhone,
+			&tr.Details,
+			&tr.Type,
+			&tr.CreatedAt,
+		)
+
+		transactions = append(transactions, *tr)
+	}
+
+	return transactions, nil
 }
