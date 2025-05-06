@@ -13,14 +13,14 @@ func (app *application) UserRoutes(r chi.Router) {
 			})
 		})
 
-		r.Route("/employees", func(r chi.Router) {
-			r.Get("/register", app.CreateEmployeeHandler)
-			r.Get("/all", app.GetAllEmployeeHandler)
-			r.Route("/{id}", func(r chi.Router) {
-				r.Put("/", app.UpdateEmployeeHandler)
-				r.Delete("/", app.DeleteEmployeeHandler)
-			})
-		})
+		// r.Route("/employees", func(r chi.Router) {
+		// 	r.Get("/register", app.CreateEmployeeHandler)
+		// 	r.Get("/all", app.GetAllEmployeeHandler)
+		// 	r.Route("/{id}", func(r chi.Router) {
+		// 		r.Put("/", app.UpdateEmployeeHandler)
+		// 		r.Delete("/", app.DeleteEmployeeHandler)
+		// 	})
+		// })
 
 		r.Route("/balances", func(r chi.Router) {
 			r.Post("/", app.CreateBalanceHandler)

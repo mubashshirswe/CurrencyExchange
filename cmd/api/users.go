@@ -71,7 +71,7 @@ func (app *application) LoginUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	token, err := JWTCreate([]byte(env.GetString("JWTSECRET", "secret")), user.ID, "userID")
+	token, err := JWTCreate([]byte(env.GetString("JWTSECRET", "secret")), int(user.ID))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

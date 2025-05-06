@@ -7,12 +7,13 @@ import (
 )
 
 type User struct {
-	ID        int64  `json:"id"`
-	Username  string `json:"username"`
-	Phone     string `json:"phone"`
-	Role      int64  `json:"role"`
-	Password  string `json:"password"`
-	CreatedAt string `json:"created_at"`
+	ID        int64   `json:"id"`
+	Username  string  `json:"username"`
+	Phone     string  `json:"phone"`
+	Role      int64   `json:"role"`
+	Password  string  `json:"password"`
+	Avatar    *string `json:"avatar"`
+	CreatedAt string  `json:"created_at"`
 }
 
 type UserStorage struct {
@@ -50,10 +51,11 @@ func (s *UserStorage) Login(ctx context.Context, user *User) error {
 		user.Phone,
 		user.Password).Scan(
 		&user.ID,
-		&user.Username,
 		&user.Phone,
-		&user.Password,
 		&user.Role,
+		&user.Avatar,
+		&user.Username,
+		&user.Password,
 		&user.CreatedAt,
 	)
 

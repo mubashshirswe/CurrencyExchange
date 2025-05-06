@@ -1,0 +1,37 @@
+# Configurations for Air live reloading
+
+# Root directory to watch (project root)
+root = "."
+
+# Directories or files to exclude from watching
+exclude_dir = ["tmp", "web", "scripts", "migrate/migrations"]
+
+# Files to exclude based on their name patterns
+exclude_file = ["*.log"]
+
+# List of file extensions to watch for changes
+extensions = [".go", ".html", ".css", ".js", ".sql", ".tmpl", ".tpl"]
+
+# Command to build your project
+build.cmd = "go build -o ./tmp/main ./cmd/api/"
+
+# Binary to execute after a successful build
+build.bin = "./tmp/main"
+
+# Log file for build errors
+build.log = "tmp/build-errors.log"
+
+# Whether to delete the built binary after Air exits
+build.delve = false
+
+# Watcher interval in milliseconds
+debug = false
+
+# Environment variables to inject (optional)
+env = ["PORT=8080", "ENV=development", "REDIS_HOST=localhost", "DB_HOST=localhost"]
+
+# The address and port the app listens to
+address = ":8080"
+
+# Delays before restarting (in milliseconds)
+restart.delay = 500

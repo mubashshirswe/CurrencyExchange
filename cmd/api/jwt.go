@@ -12,18 +12,24 @@ import (
 
 type contextKey string
 
-const UserKey contextKey = "UserID"
-const EmployeeKey contextKey = "EmployeeID"
+const (
+	UserKey   contextKey = "UserID"
+	SellerKey contextKey = "SellerID"
+	AdminKey  contextKey = "AdminID"
+)
 
-func JWTCreate(secret []byte, id int64, types string) (string, error) {
-	expiration := time.Second * time.Duration(env.GetInt("JWTExpirationInSeconds", 3600000))
+// JWTCreate generates a JWT token with the provided secret, user ID, and type.
+func JWTCreate(secret []byte, userID int) (string, error) {
+	expiration := time.Duration(env.GetInt("JWTExpirationInSeconds", 3600)) * time.Second
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		types:       strconv.Itoa(int(id)),
+	claims := jwt.MapClaims{
+		"userID":    strconv.Itoa(userID),
 		"expiredAt": time.Now().Add(expiration).Unix(),
-	})
+	}
 
-	tokenString, err := token.SignedString(token)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	tokenString, err := token.SignedString(secret)
 	if err != nil {
 		return "", err
 	}
@@ -31,24 +37,25 @@ func JWTCreate(secret []byte, id int64, types string) (string, error) {
 	return tokenString, nil
 }
 
-func ValidateToken(token string) (*jwt.Token, error) {
+// validateToken parses and validates the provided JWT token string.
+func validateToken(token string) (*jwt.Token, error) {
 	if token == "" {
 		return nil, fmt.Errorf("token is empty")
 	}
 
 	return jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		if t.Method != jwt.SigningMethodHS256 {
-			return nil, fmt.Errorf("unexpected signing method %v", t.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
 		return []byte(env.GetString("JWTSECRET", "secret")), nil
 	})
 }
 
+// GetTokenFromRequest extracts the JWT token from the request's Authorization header.
 func GetTokenFromRequest(r *http.Request) string {
 	tokenAuth := r.Header.Get("Authorization")
-	if tokenAuth != "" {
-		return tokenAuth[:7]
+	if len(tokenAuth) > 7 && tokenAuth[:7] == "Bearer " {
+		return tokenAuth[7:]
 	}
-
 	return ""
 }
