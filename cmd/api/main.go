@@ -72,10 +72,17 @@ func main() {
 }
 
 func GetIdFromContext(r *http.Request) int64 {
+	log.Printf("Full URL: %s", r.URL.Path)
 	param := chi.URLParam(r, "id")
+	log.Printf("Extracted 'id': %s", param)
+
+	if param == "" {
+		return 0
+	}
 
 	id, err := strconv.ParseInt(param, 10, 64)
 	if err != nil {
+		log.Printf("Error parsing 'id': %v", err)
 		return 0
 	}
 	return id

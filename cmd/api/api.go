@@ -56,7 +56,6 @@ func (app *application) mount() *chi.Mux {
 		r.Post("/users/register", app.CreateUserHandler)
 		r.Post("/users/login", app.LoginUserHandler)
 
-		// app.EmployeeRoutes(r)
 		app.UserRoutes(r)
 
 	})

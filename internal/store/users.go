@@ -73,10 +73,11 @@ func (s *UserStorage) GetById(ctx context.Context, id *int64) (*User, error) {
 
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
-		&user.Username,
 		&user.Phone,
-		&user.Password,
 		&user.Role,
+		&user.Avatar,
+		&user.Username,
+		&user.Password,
 		&user.CreatedAt,
 	)
 
@@ -104,10 +105,11 @@ func (s *UserStorage) GetAll(ctx context.Context) ([]User, error) {
 		user := &User{}
 		rows.Scan(
 			&user.ID,
-			&user.Username,
 			&user.Phone,
-			&user.Password,
 			&user.Role,
+			&user.Avatar,
+			&user.Username,
+			&user.Password,
 			&user.CreatedAt,
 		)
 
@@ -118,22 +120,29 @@ func (s *UserStorage) GetAll(ctx context.Context) ([]User, error) {
 }
 
 func (s *UserStorage) Update(ctx context.Context, user *User) error {
-	query := `UPDATE users SET username = $1, phone = $2, password = $3, role = $4 WHERE id = $5
-				RETURNING id, created_at`
+	query := `UPDATE users SET username = $1, phone = $2, password = $3, role = $4, avatar = $5 WHERE id = $6`
 
-	err := s.db.QueryRowContext(
+	result, err := s.db.ExecContext(
 		ctx,
 		query,
 		user.Username,
 		user.Phone,
 		user.Password,
-		user.Role).Scan(
-		&user.ID,
-		&user.CreatedAt,
-	)
+		user.Role,
+		user.Avatar,
+		user.ID)
 
 	if err != nil {
 		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("user not found")
 	}
 
 	return nil

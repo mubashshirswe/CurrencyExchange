@@ -14,9 +14,11 @@ type CreateCurrencyPayload struct {
 }
 
 type UpdateCurrencyPayload struct {
-	Name string `json:"name"`
-	Sell *int64 `json:"sell"`
-	Buy  *int64 `json:"buy"`
+	ID        int64  `json:"id"`
+	Name      string `json:"name"`
+	Sell      *int64 `json:"sell"`
+	Buy       *int64 `json:"buy"`
+	CompanyId int64  `json:"company_id"`
 }
 
 func (app *application) CreateCurrencyHandler(w http.ResponseWriter, r *http.Request) {
@@ -75,9 +77,11 @@ func (app *application) UpdateCurrencyHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	currency := &store.Currency{
-		Name: payload.Name,
-		Sell: payload.Sell,
-		Buy:  payload.Buy,
+		ID:        payload.ID,
+		Name:      payload.Name,
+		Sell:      payload.Sell,
+		Buy:       payload.Buy,
+		CompanyId: payload.CompanyId,
 	}
 
 	if err := app.store.Currencies.Update(r.Context(), currency); err != nil {
@@ -92,9 +96,13 @@ func (app *application) UpdateCurrencyHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) DeleteCurrencyHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	var payload IdBalancePayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
 
-	if err := app.store.Currencies.Delete(r.Context(), &id); err != nil {
+	if err := app.store.Currencies.Delete(r.Context(), &payload.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

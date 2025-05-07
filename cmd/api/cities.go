@@ -7,14 +7,14 @@ import (
 )
 
 type CreateCityPayload struct {
-	Name      string  `json:"name"`
-	SubName   *string `json:"sub_name"`
-	CompanyId int64   `json:"company_id"`
+	Name      string `json:"name"`
+	ParentId  *int64 `json:"parent_id"`
+	CompanyId int64  `json:"company_id"`
 }
 
 type UpdateCityPayload struct {
-	Name    string  `json:"name"`
-	SubName *string `json:"sub_name"`
+	Name     string `json:"name"`
+	ParentId *int64 `json:"parent_id"`
 }
 
 func (app *application) CreateCityHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,7 +31,7 @@ func (app *application) CreateCityHandler(w http.ResponseWriter, r *http.Request
 
 	city := &store.City{
 		Name:      payload.Name,
-		SubName:   payload.SubName,
+		ParentId:  payload.ParentId,
 		CompanyId: payload.CompanyId,
 	}
 
@@ -72,8 +72,8 @@ func (app *application) UpdateCityHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	city := &store.City{
-		Name:    payload.Name,
-		SubName: payload.SubName,
+		Name:     payload.Name,
+		ParentId: payload.ParentId,
 	}
 
 	if err := app.store.Cities.Update(r.Context(), city); err != nil {

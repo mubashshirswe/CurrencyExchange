@@ -16,7 +16,7 @@ func (app *application) JWTUserMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString := GetTokenFromRequest(r)
-			token, err := ValidateToken(tokenString)
+			token, err := validateToken(tokenString)
 			if err != nil {
 				log.Printf("failed to validate token: %v", err)
 				app.unauthorizedErrorResponse(w, r, err)
@@ -62,7 +62,7 @@ func (app *application) JWTEmployeeMiddleware() func(http.Handler) http.Handler 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tokenString := GetTokenFromRequest(r)
-			token, err := ValidateToken(tokenString)
+			token, err := validateToken(tokenString)
 			if err != nil {
 				log.Printf("failed to validate token: %v", err)
 				app.unauthorizedErrorResponse(w, r, err)
@@ -98,7 +98,7 @@ func (app *application) JWTEmployeeMiddleware() func(http.Handler) http.Handler 
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), EmployeeKey, employee.ID)
+			ctx := context.WithValue(r.Context(), UserKey, employee.ID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

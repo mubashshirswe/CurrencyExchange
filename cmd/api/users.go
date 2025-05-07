@@ -8,10 +8,11 @@ import (
 )
 
 type UserPayload struct {
-	Username string `json:"username"`
-	Phone    string `json:"phone"`
-	Role     int64  `json:"role"`
-	Password string `json:"password"`
+	Username string  `json:"username"`
+	Phone    string  `json:"phone"`
+	Role     int64   `json:"role"`
+	Password string  `json:"password"`
+	Avatar   *string `json:"avatar"`
 }
 
 type LoginUserPayload struct {
@@ -71,7 +72,7 @@ func (app *application) LoginUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	token, err := JWTCreate([]byte(env.GetString("JWTSECRET", "secret")), int(user.ID))
+	token, err := JWTCreate([]byte(env.GetString("JWTSECRET", "secret")), int(user.ID), "userID")
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -97,6 +98,7 @@ func (app *application) GetAllUserHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+	id := GetIdFromContext(r)
 	var payload UserPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -109,10 +111,12 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	user := &store.User{
+		ID:       id,
 		Username: payload.Username,
 		Phone:    payload.Phone,
 		Role:     payload.Role,
 		Password: payload.Password,
+		Avatar:   payload.Avatar,
 	}
 
 	if err := app.store.Users.Update(r.Context(), user); err != nil {
