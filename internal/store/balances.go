@@ -114,7 +114,7 @@ func (s *BalanceStorage) GetById(ctx context.Context, id *int64) (*Balance, erro
 	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, created_at, updated_at, currency_id FROM balances WHERE id = $1`
 	balance := &Balance{}
 
-	err := s.db.QueryRowContext(ctx, query, id).Scan(&balance.ID,
+	err := s.db.QueryRowContext(ctx, query, id).Scan(
 		&balance.ID,
 		&balance.Balance,
 		&balance.UserId,
@@ -123,7 +123,8 @@ func (s *BalanceStorage) GetById(ctx context.Context, id *int64) (*Balance, erro
 		&balance.CompanyId,
 		&balance.CreatedAt,
 		&balance.UpdatedAt,
-		&balance.CurrencyId)
+		&balance.CurrencyId,
+	)
 	if err != nil {
 		return nil, err
 	}

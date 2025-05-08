@@ -82,7 +82,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) GetAllTransactionHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 	transactions, err := app.store.Transactions.GetAllByBalanceId(r.Context(), &id)
 	if err != nil {
 		app.internalServerError(w, r, err)
@@ -121,7 +121,7 @@ func (app *application) GetAllTransactionByDateHandler(w http.ResponseWriter, r 
 }
 
 func (app *application) GetTransactionByIdHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 
 	transaction, err := app.store.Transactions.GetById(r.Context(), &id)
 	if err != nil {

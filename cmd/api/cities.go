@@ -88,7 +88,7 @@ func (app *application) UpdateCityHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) DeleteCityHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 	if err := app.store.Cities.Delete(r.Context(), &id); err != nil {
 		app.internalServerError(w, r, err)
 		return

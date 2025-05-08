@@ -32,6 +32,14 @@ type Storage struct {
 		Update(context.Context, *Balance) error
 	}
 
+	BalanceRecords interface {
+		Create(context.Context, *BalanceRecord) error
+		GetByBalanceId(context.Context, int64) ([]BalanceRecord, error)
+		GetByUserId(context.Context, int64) ([]BalanceRecord, error)
+		Update(context.Context, *BalanceRecord) error
+		Delete(context.Context, int64) error
+	}
+
 	Transactions interface {
 		Create(context.Context, *Transaction) error
 		Update(context.Context, *Transaction) error
@@ -64,12 +72,13 @@ type Storage struct {
 
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
-		Users:        &UserStorage{db: db},
-		Transactions: &TransactionStorage{db: db},
-		Currencies:   &CurrencyStorage{db: db},
-		Cities:       &CityStorage{db: db},
-		Balances:     &BalanceStorage{db: db},
-		Companies:    &CompanyStorage{db: db},
-		Employees:    &EmployeeStorage{db: db},
+		Users:          &UserStorage{db: db},
+		Transactions:   &TransactionStorage{db: db},
+		Currencies:     &CurrencyStorage{db: db},
+		Cities:         &CityStorage{db: db},
+		Balances:       &BalanceStorage{db: db},
+		Companies:      &CompanyStorage{db: db},
+		Employees:      &EmployeeStorage{db: db},
+		BalanceRecords: &BalanceRecordStorage{db: db},
 	}
 }

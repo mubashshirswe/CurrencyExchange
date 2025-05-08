@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/mubashshir3767/currencyExchange/internal/service"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/store/cache"
 )
@@ -14,6 +16,7 @@ import (
 type application struct {
 	config     config
 	store      store.Storage
+	service    service.Service
 	cacheStore cache.Storage
 }
 
@@ -45,18 +48,80 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Logger)
+	// r.Use(chi.MiddlewareFunc(http.StripPrefix))
 
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-			app.writeResponse(w, http.StatusOK, "ok")
+		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+			app.writeResponse(w, http.StatusOK, chi.URLParam(r, "id"))
 		})
 
 		r.Post("/users/register", app.CreateUserHandler)
 		r.Post("/users/login", app.LoginUserHandler)
 
-		app.UserRoutes(r)
+		r.With(app.JWTUserMiddleware()).Route("/user", func(r chi.Router) {
+
+			r.Get("/all", app.GetAllUserHandler)
+			r.Put("/{id}", app.UpdateUserHandler)
+			r.Delete("/{id}", app.DeleteUserHandler)
+
+			r.Route("/balances", func(r chi.Router) {
+				r.Post("/", app.CreateBalanceHandler)
+				r.Get("/all", app.GetAllBalanceHandler)
+				r.Get("/user", app.GetBalanceByUserIdHandler)
+				r.Get("/", app.GetBalanceByIdHandler)
+				r.Put("/", app.UpdateBalanceHandler)
+			})
+
+			r.Route("/balances-records", func(r chi.Router) {
+				r.Post("/", app.CreateBalanceRecordHandler)
+				r.Get("/balance/{id}", app.GetBalanceRecordsByBalanceIdHandler)
+				r.Get("/user/{id}", app.GetBalanceRecordsByUserIdHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Put("/", app.UpdateBalanceRecordHandler)
+					r.Delete("/", app.DeleteBalanceRecordHandler)
+				})
+			})
+
+			r.Route("/currencies", func(r chi.Router) {
+				r.Post("/", app.CreateCurrencyHandler)
+				r.Get("/all", app.GetAllCurrencyHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Put("/", app.UpdateCurrencyHandler)
+					r.Delete("/", app.DeleteCurrencyHandler)
+				})
+			})
+
+			r.Route("/cities", func(r chi.Router) {
+				r.Post("/", app.CreateCityHandler)
+				r.Get("/all", app.GetAllCityHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Put("/", app.UpdateCityHandler)
+					r.Delete("/", app.DeleteCityHandler)
+				})
+			})
+
+			r.Route("/transactions", func(r chi.Router) {
+				r.Post("/", app.CreateTransactionHandler)
+				r.Get("/all/balance/{id}", app.GetAllTransactionHandler)
+				r.Get("/all/date", app.GetAllTransactionByDateHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", app.GetTransactionByIdHandler)
+					r.Put("/", app.UpdateTransactionHandler)
+				})
+			})
+
+			r.Route("/companies", func(r chi.Router) {
+				r.Post("/", app.CreateCompanyHandler)
+				r.Get("/all", app.GetAllCompanyHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", app.GetCompanyByIdHandler)
+					r.Put("/", app.UpdateCompanyHandler)
+					r.Delete("/", app.DeleteCompanyHandler)
+				})
+			})
+		})
 
 	})
 
@@ -74,4 +139,14 @@ func (app *application) run(mux *chi.Mux) error {
 
 	fmt.Printf("server has been started on %v env %v", app.config.addr, app.config.env)
 	return srv.ListenAndServe()
+}
+
+func getIDFromContext(r *http.Request) int64 {
+	id := chi.URLParam(r, "id")
+	ID, err := strconv.ParseInt(id, 10, 60)
+	if err != nil {
+		return 0
+	}
+
+	return ID
 }

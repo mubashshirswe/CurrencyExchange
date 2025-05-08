@@ -120,13 +120,12 @@ func (s *UserStorage) GetAll(ctx context.Context) ([]User, error) {
 }
 
 func (s *UserStorage) Update(ctx context.Context, user *User) error {
-	query := `UPDATE users SET username = $1, phone = $2, password = $3, role = $4, avatar = $5 WHERE id = $6`
+	query := `UPDATE users SET username = $1, password = $2, role = $3, avatar = $4 WHERE id = $5`
 
 	result, err := s.db.ExecContext(
 		ctx,
 		query,
 		user.Username,
-		user.Phone,
 		user.Password,
 		user.Role,
 		user.Avatar,

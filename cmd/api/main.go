@@ -2,13 +2,11 @@ package main
 
 import (
 	"log"
-	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 	"github.com/mubashshir3767/currencyExchange/internal/db"
 	"github.com/mubashshir3767/currencyExchange/internal/env"
+	"github.com/mubashshir3767/currencyExchange/internal/service"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/store/cache"
 )
@@ -57,33 +55,18 @@ func main() {
 
 	// Initialize store
 	store := store.NewStorage(db)
+	service := service.NewService(store)
 	cacheStore := cache.NewRedisStorage(rdb)
 
 	// Initialize the application
 	app := application{
 		config:     cfg,
 		store:      store,
+		service:    service,
 		cacheStore: cacheStore,
 	}
 
 	// Mount routes and run the server
 	mux := app.mount()
 	log.Fatal(app.run(mux))
-}
-
-func GetIdFromContext(r *http.Request) int64 {
-	log.Printf("Full URL: %s", r.URL.Path)
-	param := chi.URLParam(r, "id")
-	log.Printf("Extracted 'id': %s", param)
-
-	if param == "" {
-		return 0
-	}
-
-	id, err := strconv.ParseInt(param, 10, 64)
-	if err != nil {
-		log.Printf("Error parsing 'id': %v", err)
-		return 0
-	}
-	return id
 }

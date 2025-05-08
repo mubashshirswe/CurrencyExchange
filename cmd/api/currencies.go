@@ -65,6 +65,7 @@ func (app *application) GetAllCurrencyHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) UpdateCurrencyHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
 	var payload UpdateCurrencyPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -77,7 +78,7 @@ func (app *application) UpdateCurrencyHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	currency := &store.Currency{
-		ID:        payload.ID,
+		ID:        id,
 		Name:      payload.Name,
 		Sell:      payload.Sell,
 		Buy:       payload.Buy,
@@ -96,13 +97,9 @@ func (app *application) UpdateCurrencyHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) DeleteCurrencyHandler(w http.ResponseWriter, r *http.Request) {
-	var payload IdBalancePayload
-	if err := readJSON(w, r, &payload); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
+	id := getIDFromContext(r)
 
-	if err := app.store.Currencies.Delete(r.Context(), &payload.ID); err != nil {
+	if err := app.store.Currencies.Delete(r.Context(), &id); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

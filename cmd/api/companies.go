@@ -55,7 +55,7 @@ func (app *application) GetAllCompanyHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) GetCompanyByIdHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 
 	company, err := app.store.Companies.GetById(r.Context(), &id)
 	if err != nil {
@@ -99,7 +99,7 @@ func (app *application) UpdateCompanyHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) DeleteCompanyHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 
 	if err := app.store.Companies.Delete(r.Context(), &id); err != nil {
 		app.internalServerError(w, r, err)

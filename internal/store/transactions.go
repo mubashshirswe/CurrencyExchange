@@ -30,12 +30,12 @@ type TransactionStorage struct {
 
 func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error {
 	query := `INSERT INTO transactions(
-				amount, service_fee, from_currency_type_id,
-				to_currency_type_id, sender_id, from_city_id, to_city_id,
-				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id) RETURNING id`
+                amount, service_fee, from_currency_type_id,
+                to_currency_type_id, sender_id, from_city_id, to_city_id,
+                receiver_name, receiver_phone, details, type, company_id,
+                balance_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
 
-	err := s.db.QueryRowContext(
+	_, err := s.db.QueryContext(
 		ctx,
 		query,
 		tr.Amount,
@@ -50,10 +50,8 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		tr.Details,
 		tr.Type,
 		tr.CompanyId,
-		tr.CreatedAt,
 		tr.BalanceId,
-	).Scan(
-		&tr.ID,
+		1,
 	)
 
 	if err != nil {

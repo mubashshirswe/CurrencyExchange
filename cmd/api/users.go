@@ -98,7 +98,7 @@ func (app *application) GetAllUserHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 	var payload UserPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
@@ -113,7 +113,6 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 	user := &store.User{
 		ID:       id,
 		Username: payload.Username,
-		Phone:    payload.Phone,
 		Role:     payload.Role,
 		Password: payload.Password,
 		Avatar:   payload.Avatar,
@@ -131,7 +130,7 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
-	id := GetIdFromContext(r)
+	id := getIDFromContext(r)
 
 	if err := app.store.Users.Delete(r.Context(), &id); err != nil {
 		app.internalServerError(w, r, err)
