@@ -136,7 +136,7 @@ func (s *BalanceStorage) Update(ctx context.Context, balance *Balance) error {
 	query := `UPDATE balances SET balance = $1, in_out_lay = $2, out_in_lay = $3
 		WHERE id = $4`
 
-	rows, err := s.db.ExecContext(ctx, query, balance.Balance, balance.InOutLay, balance.OutInLay)
+	rows, err := s.db.ExecContext(ctx, query, balance.Balance, balance.InOutLay, balance.OutInLay, balance.ID)
 	if err != nil {
 		return err
 	}
