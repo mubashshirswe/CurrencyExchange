@@ -45,7 +45,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 
 func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *BalanceRecord) error {
 	query := `UPDATE balance_records SET amount = $1, user_id = $2, balance_id = $3,
-				company_id =$4, details = $5, currency_id = $6, type = $6 WHERE id = $7`
+				company_id =$4, details = $5, currency_id = $6, type = $7 WHERE id = $8`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -64,7 +64,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 }
 
 func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id int64) ([]BalanceRecord, error) {
-	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, created_at balance_records WHERE balance_id = $1`
+	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, created_at FROM balance_records WHERE balance_id = $1`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -76,7 +76,6 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 	}
 
 	var balanceRecords []BalanceRecord
-
 	for rows.Next() {
 		balance := BalanceRecord{}
 
@@ -103,7 +102,7 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 }
 
 func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) ([]BalanceRecord, error) {
-	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, created_at balance_records WHERE user_id = $1`
+	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, created_at FROM balance_records WHERE user_id = $1`
 
 	rows, err := s.db.QueryContext(
 		ctx,

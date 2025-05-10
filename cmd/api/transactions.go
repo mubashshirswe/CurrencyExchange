@@ -70,7 +70,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		BalanceId:          payload.BalanceId,
 	}
 
-	if err := app.store.Transactions.Create(r.Context(), transaction); err != nil {
+	if err := app.service.Transactions.CreateTransaction(r.Context(), transaction); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

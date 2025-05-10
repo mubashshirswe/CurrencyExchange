@@ -30,6 +30,7 @@ type Storage struct {
 		GetByUserId(context.Context, *int64) ([]Balance, error)
 		GetAll(context.Context) ([]Balance, error)
 		Update(context.Context, *Balance) error
+		Delete(context.Context, int64) error
 	}
 
 	BalanceRecords interface {

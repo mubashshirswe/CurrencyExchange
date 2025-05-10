@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     receiver_name varchar(255) NOT NULL,
     receiver_phone varchar(9) NOT NULL,
     status bigint NOT NULL,
-    company_id bigint NOT NULL,
-    balance_id bigint NOT NULL,
+    company_id bigint,
+    balance_id bigint,
     details varchar(255) NOT NULL,
     type bigint NOT NULL,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()

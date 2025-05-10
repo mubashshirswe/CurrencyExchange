@@ -25,10 +25,6 @@ type UpdateBalancePayload struct {
 	CurrencyId int64 `json:"currency_id"`
 }
 
-type IdBalancePayload struct {
-	ID int64 `json:"id"`
-}
-
 func (app *application) CreateBalanceHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreateBalancePayload
 	if err := readJSON(w, r, &payload); err != nil {
@@ -62,12 +58,8 @@ func (app *application) CreateBalanceHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) GetBalanceByIdHandler(w http.ResponseWriter, r *http.Request) {
-	var payload IdBalancePayload
-	if err := readJSON(w, r, &payload); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-	balance, err := app.store.Balances.GetById(r.Context(), &payload.ID)
+	id := getIDFromContext(r)
+	balance, err := app.store.Balances.GetById(r.Context(), &id)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -80,12 +72,8 @@ func (app *application) GetBalanceByIdHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) GetBalanceByUserIdHandler(w http.ResponseWriter, r *http.Request) {
-	var payload IdBalancePayload
-	if err := readJSON(w, r, &payload); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-	balance, err := app.store.Balances.GetByUserId(r.Context(), &payload.ID)
+	id := getIDFromContext(r)
+	balance, err := app.store.Balances.GetByUserId(r.Context(), &id)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -135,6 +123,19 @@ func (app *application) UpdateBalanceHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := app.writeResponse(w, http.StatusOK, balance); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) DeleteBalanceHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+	if err := app.store.Balances.Delete(r.Context(), id); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "DELETED"); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

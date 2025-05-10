@@ -69,9 +69,12 @@ func (app *application) mount() *chi.Mux {
 			r.Route("/balances", func(r chi.Router) {
 				r.Post("/", app.CreateBalanceHandler)
 				r.Get("/all", app.GetAllBalanceHandler)
-				r.Get("/user", app.GetBalanceByUserIdHandler)
-				r.Get("/", app.GetBalanceByIdHandler)
-				r.Put("/", app.UpdateBalanceHandler)
+				r.Get("/user/{id}", app.GetBalanceByUserIdHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Get("/", app.GetBalanceByIdHandler)
+					r.Put("/", app.UpdateBalanceHandler)
+					r.Delete("/", app.DeleteBalanceHandler)
+				})
 			})
 
 			r.Route("/balances-records", func(r chi.Router) {

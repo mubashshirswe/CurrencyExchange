@@ -152,3 +152,22 @@ func (s *BalanceStorage) Update(ctx context.Context, balance *Balance) error {
 
 	return nil
 }
+
+func (s *BalanceStorage) Delete(ctx context.Context, id int64) error {
+	query := `DELETE FROM balances WHERE id = $1`
+	rows, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return errors.New("BALANCE NOT FOUND")
+	}
+
+	return nil
+}

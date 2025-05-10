@@ -78,7 +78,10 @@ func (app *application) LoginUserHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, token); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, map[string]any{
+		"token": token,
+		"user":  user,
+	}); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
