@@ -17,7 +17,6 @@ func main() {
 		log.Fatal("failed to load .env file")
 	}
 
-	// Load configuration from environment variables
 	cfg := config{
 		addr: env.GetString("ADDR", ":8080"),
 		db: dbConfig{
@@ -38,7 +37,6 @@ func main() {
 	rdb := cache.NewRedisClient(cfg.redisConfig.addr, cfg.redisConfig.pw, cfg.redisConfig.db)
 	log.Println("redis cache connection established")
 
-	// Initialize database connection
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -53,12 +51,10 @@ func main() {
 	defer db.Close()
 	log.Println("DATABASE HAS BEEN SUCCESSFULLY ESTABLISHED")
 
-	// Initialize store
 	store := store.NewStorage(db)
 	service := service.NewService(store)
 	cacheStore := cache.NewRedisStorage(rdb)
 
-	// Initialize the application
 	app := application{
 		config:     cfg,
 		store:      store,
@@ -66,7 +62,6 @@ func main() {
 		cacheStore: cacheStore,
 	}
 
-	// Mount routes and run the server
 	mux := app.mount()
 	log.Fatal(app.run(mux))
 }
