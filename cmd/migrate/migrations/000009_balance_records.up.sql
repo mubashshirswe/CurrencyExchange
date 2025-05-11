@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS balance_records (
     id bigserial PRIMARY KEY,
     amount bigint NOT NULL,
+    serial_no varchar(255) unique,
     user_id bigint,
     balance_id bigint,
     company_id bigint,

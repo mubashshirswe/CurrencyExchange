@@ -37,6 +37,7 @@ type Storage struct {
 		Create(context.Context, *BalanceRecord) error
 		GetByBalanceId(context.Context, int64) ([]BalanceRecord, error)
 		GetByUserId(context.Context, int64) ([]BalanceRecord, error)
+		GetBySerialNo(context.Context, string) (*BalanceRecord, error)
 		Update(context.Context, *BalanceRecord) error
 		Delete(context.Context, int64) error
 	}
@@ -44,6 +45,7 @@ type Storage struct {
 	Transactions interface {
 		Create(context.Context, *Transaction) error
 		Update(context.Context, *Transaction) error
+		Delete(context.Context, *int64) error
 		GetById(context.Context, *int64) (*Transaction, error)
 		GetAllByBalanceId(context.Context, *int64) ([]Transaction, error)
 		GetAllByDate(context.Context, string, string, *int64) ([]Transaction, error)

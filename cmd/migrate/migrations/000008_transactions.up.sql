@@ -1,10 +1,12 @@
 CREATE TABLE IF NOT EXISTS transactions (
     id bigserial PRIMARY KEY,
+    serial_no varchar(255) unique,
     amount bigint NOT NULL,
     service_fee bigint DEFAULT NULL,
     from_currency_type_id bigint,
     to_currency_type_id bigint,
     sender_id bigint,
+    receiver_id bigint,
     from_city_id bigint,
     to_city_id bigint,
     receiver_name varchar(255) NOT NULL,
@@ -17,6 +19,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );
 
+ALTER TABLE transactions ADD CONSTRAINT fk_transactions_receiver_id FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE transactions ADD CONSTRAINT fk_transactions_sender_id FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE transactions ADD CONSTRAINT fk_transactions_from_currency_type_id FOREIGN KEY (from_currency_type_id) REFERENCES currencies(id) ON DELETE SET NULL;
 ALTER TABLE transactions ADD CONSTRAINT fk_transactions_to_currency_type_id FOREIGN KEY (to_currency_type_id) REFERENCES currencies(id) ON DELETE SET NULL;

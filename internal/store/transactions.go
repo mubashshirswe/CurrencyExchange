@@ -13,12 +13,15 @@ type Transaction struct {
 	FromCurrencyTypeId int64   `json:"from_currency_type_id"`
 	ToCurrencyTypeId   int64   `json:"to_currency_type_id"`
 	SenderId           int64   `json:"sender_id"`
+	SerialNo           string  `json:"serial_no"`
+	ReceiverId         int64   `json:"receiver_id"`
 	FromCityId         int64   `json:"from_city_id"`
 	ToCityId           int64   `json:"to_city_id"`
 	ReceiverName       string  `json:"receiver_name"`
 	ReceiverPhone      string  `json:"receiver_phone"`
 	Details            string  `json:"details"`
 	Type               int64   `json:"type"`
+	Status             int64   `json:"status"`
 	CompanyId          int64   `json:"company_id"`
 	BalanceId          int64   `json:"balance_id"`
 	CreatedAt          *string `json:"created_at"`
@@ -33,7 +36,7 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
                 amount, service_fee, from_currency_type_id,
                 to_currency_type_id, sender_id, from_city_id, to_city_id,
                 receiver_name, receiver_phone, details, type, company_id,
-                balance_id, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`
+                balance_id, status, receiver_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
 
 	_, err := s.db.QueryContext(
 		ctx,
@@ -51,7 +54,8 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		tr.Type,
 		tr.CompanyId,
 		tr.BalanceId,
-		1,
+		tr.Status,
+		tr.ReceiverId,
 	)
 
 	if err != nil {
@@ -64,8 +68,8 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error {
 	query := `UPDATE transactions SET amount = $1, service_fee = $2, from_currency_type_id = $3,
 				to_currency_type_id = $4, sender_id = $5, from_city_id = $6, to_city_id = $7,
-				receiver_name = $8, receiver_phone = $9, details = $10, type = $11, 
-				WHERE id = $12`
+				receiver_name = $8, receiver_phone = $9, details = $10, type = $11, receiver_id = $12
+				WHERE id = $13`
 
 	rows, err := s.db.ExecContext(
 		ctx,
@@ -81,6 +85,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 		tr.ReceiverPhone,
 		tr.Details,
 		tr.Type,
+		tr.ReceiverId,
 		tr.ID,
 	)
 
@@ -103,7 +108,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transacti
 	query := `SELECT id, amount, service_fee, from_currency_type_id,
 				to_currency_type_id, sender_id, from_city_id, to_city_id,
 				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id FROM transactions WHERE id = $1`
+				created_at, balance_id, receiver_id FROM transactions WHERE id = $1`
 
 	tr := &Transaction{}
 
@@ -127,6 +132,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transacti
 		&tr.CompanyId,
 		&tr.CreatedAt,
 		&tr.BalanceId,
+		&tr.ReceiverId,
 	)
 
 	if err != nil {
@@ -140,46 +146,14 @@ func (s *TransactionStorage) GetAllByBalanceId(ctx context.Context, balance_id *
 	query := `SELECT id, amount, service_fee, from_currency_type_id,
 				to_currency_type_id, sender_id, from_city_id, to_city_id,
 				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id FROM transactions WHERE balance_id = $1 ORDER BY created_at DESC`
-	var transactions []Transaction
+				created_at, balance_id, receiver_id FROM transactions WHERE balance_id = $1 ORDER BY created_at DESC`
+
 	rows, err := s.db.QueryContext(
 		ctx,
 		query,
 		balance_id,
 	)
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		tr := &Transaction{}
-		err := rows.Scan(
-			&tr.ID,
-			&tr.Amount,
-			&tr.ServiceFee,
-			&tr.FromCurrencyTypeId,
-			&tr.ToCurrencyTypeId,
-			&tr.SenderId,
-			&tr.FromCityId,
-			&tr.ToCityId,
-			&tr.ReceiverName,
-			&tr.ReceiverPhone,
-			&tr.Details,
-			&tr.Type,
-			&tr.CompanyId,
-			&tr.CreatedAt,
-			&tr.BalanceId,
-		)
-		if err != nil {
-			return nil, err
-		}
-
-		transactions = append(transactions, *tr)
-	}
-
-	return transactions, nil
+	return s.ConvertRowsToObject(rows, err)
 }
 
 func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string, balance_id *int64) ([]Transaction, error) {
@@ -187,7 +161,6 @@ func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to s
 				to_currency_type_id, sender_id, from_city_id, to_city_id,
 				receiver_name, receiver_phone, details, type, company_id, balance_id,
 				created_at FROM transactions WHERE created_at between $1 and $2 and $3`
-	var transactions []Transaction
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -197,10 +170,40 @@ func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to s
 		balance_id,
 	)
 
+	return s.ConvertRowsToObject(rows, err)
+}
+
+func (s *TransactionStorage) Delete(ctx context.Context, id *int64) error {
+	query := `DELETE FROM transactions WHERE id = $1`
+
+	rows, err := s.db.ExecContext(
+		ctx,
+		query,
+		id,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return errors.New("TRANSACTION NOT FOUND")
+	}
+
+	return nil
+}
+
+func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]Transaction, error) {
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+	var transactions []Transaction
 
 	for rows.Next() {
 		tr := &Transaction{}

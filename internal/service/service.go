@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
@@ -9,10 +11,14 @@ import (
 type Service struct {
 	BalanceRecords interface {
 		PerformBalanceRecord(context.Context, *store.BalanceRecord) error
+		RollbackBalanceRecord(context.Context, string) error
+		UpdateRecord(context.Context, *store.BalanceRecord) error
 	}
 
 	Transactions interface {
-		CreateTransaction(context.Context, *store.Transaction) error
+		PerformTransaction(context.Context, *store.Transaction) error
+		Update(context.Context, *store.Transaction) error
+		Delete(context.Context, *int64) error
 	}
 }
 
@@ -21,4 +27,8 @@ func NewService(store store.Storage) Service {
 		BalanceRecords: &BalanceRecordService{store: store},
 		Transactions:   &TransactionService{store: store},
 	}
+}
+
+func GenerateSerialNo(id int64) string {
+	return fmt.Sprintf("%v%v", id, rand.Intn(10000))
 }

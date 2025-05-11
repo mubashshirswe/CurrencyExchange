@@ -8,6 +8,7 @@ import (
 type BalanceRecord struct {
 	ID         int64  `json:"id"`
 	Amount     int64  `json:"amount"`
+	SerialNo   string `json:"serial_no"`
 	UserID     int64  `json:"user_id"`
 	BalanceID  int64  `json:"balance_id"`
 	CompanyID  int64  `json:"company_id"`
@@ -22,8 +23,8 @@ type BalanceRecordStorage struct {
 }
 
 func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *BalanceRecord) error {
-	query := `INSERT INTO balance_records(amount, user_id, balance_id, company_id, details, currency_id, type)
-				VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at`
+	query := `INSERT INTO balance_records(amount, user_id, balance_id, company_id, details, currency_id, type, serial_no)
+				VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -35,6 +36,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.Details,
 		balanceRecord.CurrenctID,
 		balanceRecord.Type,
+		balanceRecord.SerialNo,
 	).Scan(
 		&balanceRecord.ID,
 		&balanceRecord.CreatedAt,
@@ -45,7 +47,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 
 func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *BalanceRecord) error {
 	query := `UPDATE balance_records SET amount = $1, user_id = $2, balance_id = $3,
-				company_id =$4, details = $5, currency_id = $6, type = $7 WHERE id = $8`
+				company_id =$4, details = $5, currency_id = $6, type = $7, serial_no = $8 WHERE id = $9`
 
 	_, err := s.db.ExecContext(
 		ctx,
@@ -57,6 +59,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.Details,
 		balanceRecord.CurrenctID,
 		balanceRecord.Type,
+		balanceRecord.SerialNo,
 		balanceRecord.ID,
 	)
 
@@ -64,7 +67,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 }
 
 func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id int64) ([]BalanceRecord, error) {
-	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, created_at FROM balance_records WHERE balance_id = $1`
+	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, serial_no, created_at FROM balance_records WHERE balance_id = $1`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -88,6 +91,7 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 			&balance.Details,
 			&balance.CurrenctID,
 			&balance.Type,
+			&balance.SerialNo,
 			&balance.CreatedAt,
 		)
 
@@ -101,8 +105,36 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 	return balanceRecords, nil
 }
 
+func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo string) (*BalanceRecord, error) {
+	query := `SELECT id, serial_no, amount, user_id, balance_id, company_id, details, currency_id, type, serial_no, created_at FROM balance_records WHERE serial_no = $1`
+
+	balance := BalanceRecord{}
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		serialNo,
+	).Scan(
+		&balance.ID,
+		&balance.SerialNo,
+		&balance.Amount,
+		&balance.UserID,
+		&balance.BalanceID,
+		&balance.CompanyID,
+		&balance.Details,
+		&balance.CurrenctID,
+		&balance.Type,
+		&balance.SerialNo,
+		&balance.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &balance, nil
+}
+
 func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) ([]BalanceRecord, error) {
-	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, created_at FROM balance_records WHERE user_id = $1`
+	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, serial_no, created_at FROM balance_records WHERE user_id = $1`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -127,6 +159,7 @@ func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) (
 			&balance.Details,
 			&balance.CurrenctID,
 			&balance.Type,
+			&balance.SerialNo,
 			&balance.CreatedAt,
 		)
 

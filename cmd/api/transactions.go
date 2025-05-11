@@ -12,6 +12,7 @@ type CreateTransactionPayload struct {
 	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
 	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
 	SenderId           int64  `json:"sender_id"`
+	ReceiverId         int64  `json:"receiver_id"`
 	FromCityId         int64  `json:"from_city_id"`
 	ToCityId           int64  `json:"to_city_id"`
 	ReceiverName       string `json:"receiver_name"`
@@ -28,6 +29,7 @@ type UpdateTransactionPayload struct {
 	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
 	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
 	SenderId           int64  `json:"sender_id"`
+	ReceiverId         int64  `json:"receiver_id"`
 	FromCityId         int64  `json:"from_city_id"`
 	ToCityId           int64  `json:"to_city_id"`
 	ReceiverName       string `json:"receiver_name"`
@@ -70,7 +72,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		BalanceId:          payload.BalanceId,
 	}
 
-	if err := app.service.Transactions.CreateTransaction(r.Context(), transaction); err != nil {
+	if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -161,12 +163,25 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 		Type:               payload.Type,
 	}
 
-	if err := app.store.Transactions.Update(r.Context(), transaction); err != nil {
+	if err := app.service.Transactions.Update(r.Context(), transaction); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := app.writeResponse(w, http.StatusOK, transaction); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) DeleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+	if err := app.service.Transactions.Delete(r.Context(), &id); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "DELETED"); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
