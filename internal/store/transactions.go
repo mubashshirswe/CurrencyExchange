@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 type Transaction struct {
@@ -109,7 +110,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 	return nil
 }
 
-func (s *TransactionStorage) GetBySerialNo(ctx context.Context, serialNo string) (*Transaction, error) {
+func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue string) (*Transaction, error) {
 	query := `SELECT 
     t.id, 
     t.amount, 
@@ -136,8 +137,7 @@ LEFT JOIN
     currencies cf ON t.from_currency_type_id = cf.id
 LEFT JOIN 
     currencies ct ON t.to_currency_type_id = ct.id
-WHERE 
-    t.serial_no = $1
+WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1
 ORDER BY 
     t.serial_no DESC`
 
@@ -146,7 +146,7 @@ ORDER BY
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
-		serialNo,
+		fieldValue,
 	).Scan(
 		&tr.ID,
 		&tr.Amount,
@@ -174,6 +174,46 @@ ORDER BY
 	}
 
 	return tr, nil
+}
+
+func (s *TransactionStorage) GetAllByStatus(ctx context.Context, status int64) ([]Transaction, error) {
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE t.status = $1
+ORDER BY 
+    t.serial_no DESC`
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		status,
+	)
+
+	return s.ConvertRowsToObject(rows, err)
 }
 
 func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transaction, error) {

@@ -47,7 +47,8 @@ type Storage struct {
 		Update(context.Context, *Transaction) error
 		Delete(context.Context, *int64) error
 		GetById(context.Context, *int64) (*Transaction, error)
-		GetBySerialNo(context.Context, string) (*Transaction, error)
+		GetByField(context.Context, string, string) (*Transaction, error)
+		GetAllByStatus(context.Context, int64) ([]Transaction, error)
 		GetAllByBalanceId(context.Context, *int64) ([]Transaction, error)
 		GetAllByUserId(context.Context, *int64) ([]Transaction, error)
 		GetAllByDate(context.Context, string, string, *int64) ([]Transaction, error)

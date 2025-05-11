@@ -54,7 +54,7 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 
 func (s *TransactionService) CompleteTransaction(ctx context.Context, serialNo string) error {
 	service := NewService(s.store)
-	transaction, err := s.store.Transactions.GetBySerialNo(ctx, serialNo)
+	transaction, err := s.store.Transactions.GetByField(ctx, "serial_no", serialNo)
 	if err != nil {
 		return fmt.Errorf("ERROR OCCURRED WHILE FINDING TRANSACTION BY SERIAL NO %v", err)
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -143,6 +144,29 @@ func (app *application) GetAllTransactionByDateHandler(w http.ResponseWriter, r 
 	}
 
 	transactions, err := app.store.Transactions.GetAllByDate(r.Context(), payload.From, payload.To, &payload.BalanceId)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transactions); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) GetAllActiveTransactionsHandler(w http.ResponseWriter, r *http.Request) {
+	status := chi.URLParam(r, "status")
+	var value int64
+	if status == "1" {
+		value = 1
+	} else if status == "2" {
+		value = 2
+	} else {
+		app.badRequestResponse(w, r, fmt.Errorf("STATUS NOT GIVEN"))
+	}
+
+	transactions, err := app.store.Transactions.GetAllByStatus(r.Context(), value)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
