@@ -7,24 +7,24 @@ import (
 )
 
 type Transaction struct {
-	ID                 int64   `json:"id"`
-	Amount             int64   `json:"amount"`
-	ServiceFee         int64   `json:"service_fee"`
-	FromCurrencyTypeId int64   `json:"from_currency_type_id"`
-	ToCurrencyTypeId   int64   `json:"to_currency_type_id"`
-	SenderId           int64   `json:"sender_id"`
-	SerialNo           string  `json:"serial_no"`
-	ReceiverId         int64   `json:"receiver_id"`
-	FromCityId         int64   `json:"from_city_id"`
-	ToCityId           int64   `json:"to_city_id"`
-	ReceiverName       string  `json:"receiver_name"`
-	ReceiverPhone      string  `json:"receiver_phone"`
-	Details            string  `json:"details"`
-	Type               int64   `json:"type"`
-	Status             int64   `json:"status"`
-	CompanyId          int64   `json:"company_id"`
-	BalanceId          int64   `json:"balance_id"`
-	CreatedAt          *string `json:"created_at"`
+	ID                 int64  `json:"id"`
+	Amount             int64  `json:"amount"`
+	ServiceFee         int64  `json:"service_fee"`
+	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
+	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
+	SenderId           int64  `json:"sender_id"`
+	SerialNo           string `json:"serial_no"`
+	ReceiverId         int64  `json:"receiver_id"`
+	FromCityId         int64  `json:"from_city_id"`
+	ToCityId           int64  `json:"to_city_id"`
+	ReceiverName       string `json:"receiver_name"`
+	ReceiverPhone      string `json:"receiver_phone"`
+	Details            string `json:"details"`
+	Type               int64  `json:"type"`
+	Status             int64  `json:"status"`
+	CompanyId          int64  `json:"company_id"`
+	BalanceId          int64  `json:"balance_id"`
+	CreatedAt          string `json:"created_at"`
 }
 
 type TransactionStorage struct {
@@ -98,7 +98,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 	}
 
 	if res == 0 {
-		return errors.New("NOT FOUND")
+		return errors.New("TRANSACTION THAT WILL BE UPDATED NOT FOUND")
 	}
 
 	return nil
@@ -156,11 +156,25 @@ func (s *TransactionStorage) GetAllByBalanceId(ctx context.Context, balance_id *
 	return s.ConvertRowsToObject(rows, err)
 }
 
+func (s *TransactionStorage) GetAllByUserId(ctx context.Context, userId *int64) ([]Transaction, error) {
+	query := `SELECT id, amount, service_fee, from_currency_type_id,
+				to_currency_type_id, sender_id, from_city_id, to_city_id,
+				receiver_name, receiver_phone, details, type, company_id,
+				created_at, balance_id, receiver_id FROM transactions WHERE sender_id = $1 OR receiver_id = $1 ORDER BY created_at DESC`
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userId,
+	)
+	return s.ConvertRowsToObject(rows, err)
+}
+
 func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string, balance_id *int64) ([]Transaction, error) {
 	query := `SELECT id, amount, service_fee, from_currency_type_id,
 				to_currency_type_id, sender_id, from_city_id, to_city_id,
-				receiver_name, receiver_phone, details, type, company_id, balance_id,
-				created_at FROM transactions WHERE created_at between $1 and $2 and $3`
+				receiver_name, receiver_phone, details, type, company_id,
+				created_at, balance_id, receiver_id FROM transactions WHERE created_at between $1 and $2 and $3`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -221,8 +235,9 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 			&tr.Details,
 			&tr.Type,
 			&tr.CompanyId,
-			&tr.BalanceId,
 			&tr.CreatedAt,
+			&tr.BalanceId,
+			&tr.ReceiverId,
 		)
 
 		if err != nil {

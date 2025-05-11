@@ -104,7 +104,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 	}
 
 	if err := s.store.Transactions.Update(ctx, transaction); err != nil {
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING TRANSACTION %v", err)
 	}
 
 	return nil
@@ -135,18 +135,28 @@ func (s *TransactionService) CheckReceiverBalance(ctx context.Context, transacti
 		return nil, fmt.Errorf("ERROR OCCURRED WHILE CHECKING RECEIVER BALANCE INFO %v", err)
 	}
 
-	isFlag := false
-	var balanceId int64
+	if balances == nil {
+		return nil, fmt.Errorf("BALANCE NOT FOUND WITH ID %v", transaction.ReceiverId)
+	}
+
+	var isFlag bool
+	var balanceId *int64
 	for _, o := range balances {
-		if o.CurrencyId == transaction.ToCurrencyTypeId && o.Balance > transaction.Amount {
+		if o.CurrencyId == transaction.ToCurrencyTypeId {
 			isFlag = true
-			balanceId = o.ID
+			if o.Balance > transaction.Amount {
+				balanceId = &o.ID
+			}
 		}
 	}
 
 	if !isFlag {
-		return nil, fmt.Errorf("RECEIVER HAS NO BALANCE ACCOUNT OR BALANCE AMOUNT LIKE REQUESTED")
+		return nil, fmt.Errorf("RECEIVER BALANCE CURRENCY DO NOT MATCH")
 	}
 
-	return &balanceId, nil
+	if balanceId == nil {
+		return nil, fmt.Errorf("RECEIVER BALANCE HAVE NO ENOUGH MONEY OR BALANCE NOT FOUND")
+	}
+
+	return balanceId, nil
 }

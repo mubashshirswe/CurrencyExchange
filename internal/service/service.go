@@ -17,6 +17,7 @@ type Service struct {
 
 	Transactions interface {
 		PerformTransaction(context.Context, *store.Transaction) error
+		CompleteTransaction(context.Context, *store.Transaction) error
 		Update(context.Context, *store.Transaction) error
 		Delete(context.Context, *int64) error
 	}

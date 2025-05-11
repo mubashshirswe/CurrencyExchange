@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
@@ -18,6 +19,8 @@ type BalanceRecordService struct {
 }
 
 func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balanceRecord *store.BalanceRecord) error {
+	serialNo := GenerateSerialNo(time.Hour.Microseconds())
+	balanceRecord.SerialNo = serialNo
 
 	balance, err := s.store.Balances.GetById(ctx, &balanceRecord.BalanceID)
 	if err != nil {
@@ -42,12 +45,12 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 
 	err = s.store.Balances.Update(ctx, balance)
 	if err != nil {
-		return errors.New("ERROR OCCURRED WHILE UPDATING TRANSACTION")
+		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING TRANSACTION %v", err)
 	}
 
 	err = s.store.BalanceRecords.Create(ctx, balanceRecord)
 	if err != nil {
-		return errors.New("ERROR OCCURRED WHILE CREATING BALANCE RECORD")
+		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
 	}
 
 	return nil

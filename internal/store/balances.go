@@ -147,7 +147,7 @@ func (s *BalanceStorage) Update(ctx context.Context, balance *Balance) error {
 	}
 
 	if res == 0 {
-		return errors.New("NOT FOUND")
+		return errors.New("BALANCE THAT WILL BE UPDATE IS NOT FOUND")
 	}
 
 	return nil

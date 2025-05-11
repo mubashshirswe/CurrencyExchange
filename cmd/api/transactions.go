@@ -19,6 +19,7 @@ type CreateTransactionPayload struct {
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
 	Type               int64  `json:"type"`
+	SerialNo           string `json:"serial_no"`
 	CompanyId          int64  `json:"company_id"`
 	BalanceId          int64  `json:"balance_id"`
 }
@@ -36,6 +37,7 @@ type UpdateTransactionPayload struct {
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
 	Type               int64  `json:"type"`
+	SerialNo           string `json:"serial_no"`
 }
 
 type DateTransactionPayload struct {
@@ -62,6 +64,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		FromCurrencyTypeId: payload.FromCurrencyTypeId,
 		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
 		SenderId:           payload.SenderId,
+		ReceiverId:         payload.ReceiverId,
 		FromCityId:         payload.FromCityId,
 		ToCityId:           payload.ToCityId,
 		ReceiverName:       payload.ReceiverName,
@@ -83,9 +86,64 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 }
 
-func (app *application) GetAllTransactionHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
+	var payload CreateTransactionPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	transaction := &store.Transaction{
+		Amount:             payload.Amount,
+		ServiceFee:         payload.ServiceFee,
+		FromCurrencyTypeId: payload.FromCurrencyTypeId,
+		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
+		SenderId:           payload.SenderId,
+		ReceiverId:         payload.ReceiverId,
+		FromCityId:         payload.FromCityId,
+		ToCityId:           payload.ToCityId,
+		ReceiverName:       payload.ReceiverName,
+		ReceiverPhone:      payload.ReceiverPhone,
+		Details:            payload.Details,
+		Type:               payload.Type,
+		CompanyId:          payload.CompanyId,
+		BalanceId:          payload.BalanceId,
+		SerialNo:           payload.SerialNo,
+	}
+
+	if err := app.service.Transactions.CompleteTransaction(r.Context(), transaction); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transaction); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) GetAllTransactionByBalanceIdHandler(w http.ResponseWriter, r *http.Request) {
 	id := getIDFromContext(r)
 	transactions, err := app.store.Transactions.GetAllByBalanceId(r.Context(), &id)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transactions); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) GetAllTransactionByUserIdHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+	transactions, err := app.store.Transactions.GetAllByUserId(r.Context(), &id)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -150,11 +208,13 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 
 	transaction := &store.Transaction{
+		SerialNo:           payload.SerialNo,
 		Amount:             payload.Amount,
 		ServiceFee:         payload.ServiceFee,
 		FromCurrencyTypeId: payload.FromCurrencyTypeId,
 		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
 		SenderId:           payload.SenderId,
+		ReceiverId:         payload.ReceiverId,
 		FromCityId:         payload.FromCityId,
 		ToCityId:           payload.ToCityId,
 		ReceiverName:       payload.ReceiverName,

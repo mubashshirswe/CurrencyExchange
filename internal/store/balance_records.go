@@ -106,9 +106,9 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 }
 
 func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo string) (*BalanceRecord, error) {
-	query := `SELECT id, serial_no, amount, user_id, balance_id, company_id, details, currency_id, type, serial_no, created_at FROM balance_records WHERE serial_no = $1`
+	query := `SELECT id, serial_no, amount, user_id, balance_id, company_id, details, currency_id, type, created_at FROM balance_records WHERE serial_no = $1`
 
-	balance := BalanceRecord{}
+	balance := &BalanceRecord{}
 	err := s.db.QueryRowContext(
 		ctx,
 		query,
@@ -123,14 +123,13 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 		&balance.Details,
 		&balance.CurrenctID,
 		&balance.Type,
-		&balance.SerialNo,
 		&balance.CreatedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &balance, nil
+	return balance, nil
 }
 
 func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) ([]BalanceRecord, error) {
