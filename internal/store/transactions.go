@@ -21,6 +21,8 @@ type Transaction struct {
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
 	Type               int64  `json:"type"`
+	FromCurrencyType   string `json:"from_currency_type"`
+	ToCurrencyType     string `json:"to_currency_type"`
 	Status             int64  `json:"status"`
 	CompanyId          int64  `json:"company_id"`
 	BalanceId          int64  `json:"balance_id"`
@@ -36,7 +38,7 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
                 amount, service_fee, from_currency_type_id,
                 to_currency_type_id, sender_id, from_city_id, to_city_id,
                 receiver_name, receiver_phone, details, type, company_id,
-                balance_id, status, receiver_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`
+                balance_id, status, receiver_id, serial_no) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`
 
 	_, err := s.db.QueryContext(
 		ctx,
@@ -56,6 +58,7 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		tr.BalanceId,
 		tr.Status,
 		tr.ReceiverId,
+		tr.SerialNo,
 	)
 
 	if err != nil {
@@ -68,8 +71,8 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error {
 	query := `UPDATE transactions SET amount = $1, service_fee = $2, from_currency_type_id = $3,
 				to_currency_type_id = $4, sender_id = $5, from_city_id = $6, to_city_id = $7,
-				receiver_name = $8, receiver_phone = $9, details = $10, type = $11, receiver_id = $12
-				WHERE id = $13`
+				receiver_name = $8, receiver_phone = $9, details = $10, type = $11, receiver_id = $12, serial_no = $13, status = $14
+				WHERE id = $15`
 
 	rows, err := s.db.ExecContext(
 		ctx,
@@ -86,6 +89,8 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 		tr.Details,
 		tr.Type,
 		tr.ReceiverId,
+		tr.SerialNo,
+		tr.Status,
 		tr.ID,
 	)
 
@@ -104,11 +109,104 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 	return nil
 }
 
+func (s *TransactionStorage) GetBySerialNo(ctx context.Context, serialNo string) (*Transaction, error) {
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE 
+    t.serial_no = $1
+ORDER BY 
+    t.serial_no DESC`
+
+	tr := &Transaction{}
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		serialNo,
+	).Scan(
+		&tr.ID,
+		&tr.Amount,
+		&tr.ServiceFee,
+		&tr.FromCurrencyTypeId,
+		&tr.ToCurrencyTypeId,
+		&tr.SenderId,
+		&tr.FromCityId,
+		&tr.ToCityId,
+		&tr.ReceiverName,
+		&tr.ReceiverPhone,
+		&tr.Details,
+		&tr.Type,
+		&tr.Status,
+		&tr.CompanyId,
+		&tr.CreatedAt,
+		&tr.BalanceId,
+		&tr.ReceiverId,
+		&tr.FromCurrencyType,
+		&tr.ToCurrencyType,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tr, nil
+}
+
 func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transaction, error) {
-	query := `SELECT id, amount, service_fee, from_currency_type_id,
-				to_currency_type_id, sender_id, from_city_id, to_city_id,
-				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id, receiver_id FROM transactions WHERE id = $1`
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE 
+    t.id = $1
+ORDER BY 
+    t.created_at DESC`
 
 	tr := &Transaction{}
 
@@ -129,10 +227,13 @@ func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transacti
 		&tr.ReceiverPhone,
 		&tr.Details,
 		&tr.Type,
+		&tr.Status,
 		&tr.CompanyId,
 		&tr.CreatedAt,
 		&tr.BalanceId,
 		&tr.ReceiverId,
+		&tr.FromCurrencyType,
+		&tr.ToCurrencyType,
 	)
 
 	if err != nil {
@@ -143,10 +244,36 @@ func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transacti
 }
 
 func (s *TransactionStorage) GetAllByBalanceId(ctx context.Context, balance_id *int64) ([]Transaction, error) {
-	query := `SELECT id, amount, service_fee, from_currency_type_id,
-				to_currency_type_id, sender_id, from_city_id, to_city_id,
-				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id, receiver_id FROM transactions WHERE balance_id = $1 ORDER BY created_at DESC`
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE 
+    t.balance_id = $1
+ORDER BY 
+    t.created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -157,10 +284,36 @@ func (s *TransactionStorage) GetAllByBalanceId(ctx context.Context, balance_id *
 }
 
 func (s *TransactionStorage) GetAllByUserId(ctx context.Context, userId *int64) ([]Transaction, error) {
-	query := `SELECT id, amount, service_fee, from_currency_type_id,
-				to_currency_type_id, sender_id, from_city_id, to_city_id,
-				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id, receiver_id FROM transactions WHERE sender_id = $1 OR receiver_id = $1 ORDER BY created_at DESC`
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE 
+    t.user_id = $1
+ORDER BY 
+    t.created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -171,10 +324,37 @@ func (s *TransactionStorage) GetAllByUserId(ctx context.Context, userId *int64) 
 }
 
 func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string, balance_id *int64) ([]Transaction, error) {
-	query := `SELECT id, amount, service_fee, from_currency_type_id,
-				to_currency_type_id, sender_id, from_city_id, to_city_id,
-				receiver_name, receiver_phone, details, type, company_id,
-				created_at, balance_id, receiver_id FROM transactions WHERE created_at between $1 and $2 and $3`
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE 
+t.created_at BETWEEN $1 and $2
+    t.balance_id = $3
+ORDER BY 
+    t.created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -234,10 +414,13 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 			&tr.ReceiverPhone,
 			&tr.Details,
 			&tr.Type,
+			&tr.Status,
 			&tr.CompanyId,
 			&tr.CreatedAt,
 			&tr.BalanceId,
 			&tr.ReceiverId,
+			&tr.FromCurrencyType,
+			&tr.ToCurrencyType,
 		)
 
 		if err != nil {

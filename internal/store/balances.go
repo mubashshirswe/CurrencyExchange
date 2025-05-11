@@ -116,8 +116,8 @@ func (s *BalanceStorage) GetByUserId(ctx context.Context, userId *int64) ([]Bala
 }
 
 func (s *BalanceStorage) GetById(ctx context.Context, id *int64) (*Balance, error) {
-	query := `SELECT SELECT b.id, b.balance, b.user_id, b.in_out_lay, b.out_in_lay, b.company_id, b.created_at, b.updated_at, b.currency_id , c.name
-		 FROM balances b join currencies c on b.currency_id = c.id FROM balances WHERE b.id = $1`
+	query := `SELECT b.id, b.balance, b.user_id, b.in_out_lay, b.out_in_lay, b.company_id, b.created_at, b.updated_at, b.currency_id , c.name
+		 FROM balances b join currencies c on b.currency_id = c.id WHERE b.id = $1`
 	balance := &Balance{}
 
 	err := s.db.QueryRowContext(ctx, query, id).Scan(

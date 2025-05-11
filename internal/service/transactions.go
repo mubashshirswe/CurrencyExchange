@@ -52,9 +52,14 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 	return nil
 }
 
-func (s *TransactionService) CompleteTransaction(ctx context.Context, transaction *store.Transaction) error {
+func (s *TransactionService) CompleteTransaction(ctx context.Context, serialNo string) error {
 	service := NewService(s.store)
-	serialNo := GenerateSerialNo(time.Hour.Microseconds())
+	transaction, err := s.store.Transactions.GetBySerialNo(ctx, serialNo)
+	if err != nil {
+		return fmt.Errorf("ERROR OCCURRED WHILE FINDING TRANSACTION BY SERIAL NO %v", err)
+	}
+
+	serialNo = GenerateSerialNo(time.Hour.Microseconds())
 
 	balanceId, err := s.CheckReceiverBalance(ctx, transaction)
 	if err != nil {
@@ -137,6 +142,10 @@ func (s *TransactionService) CheckReceiverBalance(ctx context.Context, transacti
 
 	if balances == nil {
 		return nil, fmt.Errorf("BALANCE NOT FOUND WITH ID %v", transaction.ReceiverId)
+	}
+
+	if transaction.FromCurrencyTypeId != transaction.ToCurrencyTypeId {
+		return nil, fmt.Errorf("BALANCE CURRENCIES DO NOT MATCH")
 	}
 
 	var isFlag bool

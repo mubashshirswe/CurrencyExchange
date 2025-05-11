@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
 
@@ -87,41 +88,14 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
-	var payload CreateTransactionPayload
-	if err := readJSON(w, r, &payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
+	serialNo := chi.URLParam(r, "serial_no")
 
-	if err := Validate.Struct(payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	transaction := &store.Transaction{
-		Amount:             payload.Amount,
-		ServiceFee:         payload.ServiceFee,
-		FromCurrencyTypeId: payload.FromCurrencyTypeId,
-		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
-		SenderId:           payload.SenderId,
-		ReceiverId:         payload.ReceiverId,
-		FromCityId:         payload.FromCityId,
-		ToCityId:           payload.ToCityId,
-		ReceiverName:       payload.ReceiverName,
-		ReceiverPhone:      payload.ReceiverPhone,
-		Details:            payload.Details,
-		Type:               payload.Type,
-		CompanyId:          payload.CompanyId,
-		BalanceId:          payload.BalanceId,
-		SerialNo:           payload.SerialNo,
-	}
-
-	if err := app.service.Transactions.CompleteTransaction(r.Context(), transaction); err != nil {
+	if err := app.service.Transactions.CompleteTransaction(r.Context(), serialNo); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, transaction); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, serialNo); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

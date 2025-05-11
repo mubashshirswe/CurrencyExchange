@@ -6,16 +6,17 @@ import (
 )
 
 type BalanceRecord struct {
-	ID         int64  `json:"id"`
-	Amount     int64  `json:"amount"`
-	SerialNo   string `json:"serial_no"`
-	UserID     int64  `json:"user_id"`
-	BalanceID  int64  `json:"balance_id"`
-	CompanyID  int64  `json:"company_id"`
-	Details    string `json:"details"`
-	CurrenctID int64  `json:"currency_id"`
-	Type       int64  `json:"type"`
-	CreatedAt  string `json:"created_at"`
+	ID           int64  `json:"id"`
+	Amount       int64  `json:"amount"`
+	SerialNo     string `json:"serial_no"`
+	UserID       int64  `json:"user_id"`
+	BalanceID    int64  `json:"balance_id"`
+	CompanyID    int64  `json:"company_id"`
+	Details      string `json:"details"`
+	CurrenctID   int64  `json:"currency_id"`
+	Type         int64  `json:"type"`
+	CurrencyType string `json:"currency_type"`
+	CreatedAt    string `json:"created_at"`
 }
 
 type BalanceRecordStorage struct {
@@ -67,7 +68,8 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 }
 
 func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id int64) ([]BalanceRecord, error) {
-	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, serial_no, created_at FROM balance_records WHERE balance_id = $1`
+	query := `SELECT br.id, br.amount, br.user_id, br.balance_id, br.company_id, br.details, br.currency_id, br.type, br.serial_no, br.created_at, c.name
+		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.balance_id = $1`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -93,6 +95,7 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 			&balance.Type,
 			&balance.SerialNo,
 			&balance.CreatedAt,
+			&balance.CurrencyType,
 		)
 
 		if err != nil {
@@ -106,7 +109,8 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 }
 
 func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo string) (*BalanceRecord, error) {
-	query := `SELECT id, serial_no, amount, user_id, balance_id, company_id, details, currency_id, type, created_at FROM balance_records WHERE serial_no = $1`
+	query := `SELECT br.id, br.amount, br.user_id, br.balance_id, br.company_id, br.details, br.currency_id, br.type, br.serial_no, br.created_at, c.name
+		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.serial_no = $1`
 
 	balance := &BalanceRecord{}
 	err := s.db.QueryRowContext(
@@ -124,6 +128,7 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 		&balance.CurrenctID,
 		&balance.Type,
 		&balance.CreatedAt,
+		&balance.CurrencyType,
 	)
 	if err != nil {
 		return nil, err
@@ -133,7 +138,8 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 }
 
 func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) ([]BalanceRecord, error) {
-	query := `SELECT id, amount, user_id, balance_id, company_id, details, currency_id, type, serial_no, created_at FROM balance_records WHERE user_id = $1`
+	query := `SELECT br.id, br.amount, br.user_id, br.balance_id, br.company_id, br.details, br.currency_id, br.type, br.serial_no, br.created_at, c.name
+		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.user_id = $1`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -160,6 +166,7 @@ func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) (
 			&balance.Type,
 			&balance.SerialNo,
 			&balance.CreatedAt,
+			&balance.CurrencyType,
 		)
 
 		if err != nil {
