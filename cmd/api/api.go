@@ -53,9 +53,9 @@ func (app *application) mount() *chi.Mux {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
-			app.writeResponse(w, http.StatusOK, chi.URLParam(r, "id"))
-		})
+		// r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+		// 	app.writeResponse(w, http.StatusOK, chi.URLParam(r, "id"))
+		// })
 
 		r.Post("/users/register", app.CreateUserHandler)
 		r.Post("/users/login", app.LoginUserHandler)

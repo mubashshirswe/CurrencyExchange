@@ -351,7 +351,7 @@ LEFT JOIN
 LEFT JOIN 
     currencies ct ON t.to_currency_type_id = ct.id
 WHERE 
-    t.user_id = $1
+    t.sender_id = $1
 ORDER BY 
     t.created_at DESC`
 
