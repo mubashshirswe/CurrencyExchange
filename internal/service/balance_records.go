@@ -27,6 +27,10 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return fmt.Errorf("BALANCE IS SELECTED NOT FOUND, %v", err)
 	}
 
+	if balance.UserId != balanceRecord.UserID {
+		return errors.New("BALANCE IS NOT BELONG TO SENDER USER")
+	}
+
 	if balance.CurrencyId != balanceRecord.CurrenctID {
 		return errors.New("CURRENCY IS NOT MATCH TO BALANCE CURRENCY")
 	}
