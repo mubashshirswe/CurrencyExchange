@@ -28,7 +28,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 	}
 
 	if balance.UserId != balanceRecord.UserID {
-		return errors.New("BALANCE IS NOT BELONG TO SENDER USER")
+		return errors.New("BALANCE IS NOT BELONG TO USER")
 	}
 
 	if balance.CurrencyId != balanceRecord.CurrenctID {
