@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 type Balance struct {
@@ -24,10 +25,24 @@ type BalanceStorage struct {
 }
 
 func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
-	query := `INSERT INTO balances(balance, user_id, in_out_lay, out_in_lay, company_id, currency_id)
+	query := `SELECT * FROM balances WHERE user_id = $1 and currency_id = $2`
+	rows, err := s.db.ExecContext(ctx, query, balance.UserId, balance.CurrencyId)
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if res != 0 {
+		return fmt.Errorf("ALREADY EXIST WITH CURRENCY %v", balance.CurrencyId)
+	}
+
+	query = `INSERT INTO balances(balance, user_id, in_out_lay, out_in_lay, company_id, currency_id)
 				VALUES($1, $2, $3, $4, $5, $6) RETURNING id, created_at`
 
-	err := s.db.QueryRowContext(
+	err = s.db.QueryRowContext(
 		ctx,
 		query,
 		balance.Balance,
