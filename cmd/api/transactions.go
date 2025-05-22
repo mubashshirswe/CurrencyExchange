@@ -130,6 +130,20 @@ func (app *application) GetAllTransactionByUserIdHandler(w http.ResponseWriter, 
 	}
 }
 
+func (app *application) GetAllTransactionByReceiverIdHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+	transactions, err := app.store.Transactions.GetAllByReceiverId(r.Context(), &id)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transactions); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) GetAllTransactionByDateHandler(w http.ResponseWriter, r *http.Request) {
 	var payload DateTransactionPayload
 

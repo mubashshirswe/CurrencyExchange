@@ -110,6 +110,7 @@ func (app *application) mount() *chi.Mux {
 				r.Get("/complete/{serial_no}", app.CompleteTransactionHandler)
 				r.Get("/all/balance/{id}", app.GetAllTransactionByBalanceIdHandler)
 				r.Get("/all/user/{id}", app.GetAllTransactionByUserIdHandler)
+				r.Get("/all/receiver/{id}", app.GetAllTransactionByReceiverIdHandler)
 				r.Get("/all/date", app.GetAllTransactionByDateHandler)
 				r.Get("/all/active/{status}", app.GetAllActiveTransactionsHandler)
 				r.Route("/{id}", func(r chi.Router) {

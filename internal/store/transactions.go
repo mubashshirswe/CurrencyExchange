@@ -363,6 +363,46 @@ ORDER BY
 	return s.ConvertRowsToObject(rows, err)
 }
 
+func (s *TransactionStorage) GetAllByReceiverId(ctx context.Context, receiverId *int64) ([]Transaction, error) {
+	query := `SELECT 
+    t.id, 
+    t.amount, 
+    t.service_fee, 
+    t.from_currency_type_id,
+    t.to_currency_type_id, 
+    t.sender_id, 
+    t.from_city_id, 
+    t.to_city_id,
+    t.receiver_name, 
+    t.receiver_phone, 
+    t.details, 
+    t.type, 
+	t.status, 
+    t.company_id,
+    t.created_at, 
+    t.balance_id, 
+    t.receiver_id, 
+    cf.name AS from_currency_name,
+    ct.name AS to_currency_name
+FROM 
+    transactions t
+LEFT JOIN 
+    currencies cf ON t.from_currency_type_id = cf.id
+LEFT JOIN 
+    currencies ct ON t.to_currency_type_id = ct.id
+WHERE 
+    t.receiver_id = $1
+ORDER BY 
+    t.created_at DESC`
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		receiverId,
+	)
+	return s.ConvertRowsToObject(rows, err)
+}
+
 func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to string, balance_id *int64) ([]Transaction, error) {
 	query := `SELECT 
     t.id, 
