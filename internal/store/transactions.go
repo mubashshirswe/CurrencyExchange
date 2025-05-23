@@ -129,6 +129,7 @@ func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, f
     t.created_at, 
     t.balance_id, 
     t.receiver_id, 
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -165,6 +166,7 @@ ORDER BY
 		&tr.CreatedAt,
 		&tr.BalanceId,
 		&tr.ReceiverId,
+		&tr.SerialNo,
 		&tr.FromCurrencyType,
 		&tr.ToCurrencyType,
 	)
@@ -195,6 +197,7 @@ func (s *TransactionStorage) GetAllByStatus(ctx context.Context, status int64) (
     t.created_at, 
     t.balance_id, 
     t.receiver_id, 
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -235,6 +238,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id *int64) (*Transacti
     t.created_at, 
     t.balance_id, 
     t.receiver_id, 
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -302,6 +306,7 @@ func (s *TransactionStorage) GetAllByBalanceId(ctx context.Context, balance_id *
     t.created_at, 
     t.balance_id, 
     t.receiver_id, 
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -342,6 +347,7 @@ func (s *TransactionStorage) GetAllByUserId(ctx context.Context, userId *int64) 
     t.created_at, 
     t.balance_id, 
     t.receiver_id, 
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -381,7 +387,8 @@ func (s *TransactionStorage) GetAllByReceiverId(ctx context.Context, receiverId 
     t.company_id,
     t.created_at, 
     t.balance_id, 
-    t.receiver_id, 
+    t.receiver_id,
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -422,6 +429,7 @@ func (s *TransactionStorage) GetAllByDate(ctx context.Context, from string, to s
     t.created_at, 
     t.balance_id, 
     t.receiver_id, 
+	t.serial_no, 
     cf.name AS from_currency_name,
     ct.name AS to_currency_name
 FROM 
@@ -499,6 +507,7 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 			&tr.CreatedAt,
 			&tr.BalanceId,
 			&tr.ReceiverId,
+			&tr.SerialNo,
 			&tr.FromCurrencyType,
 			&tr.ToCurrencyType,
 		)
