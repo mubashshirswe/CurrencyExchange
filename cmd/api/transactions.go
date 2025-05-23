@@ -20,7 +20,6 @@ type CreateTransactionPayload struct {
 	ReceiverName       string `json:"receiver_name"`
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
-	Type               int64  `json:"type"`
 	SerialNo           string `json:"serial_no"`
 	CompanyId          int64  `json:"company_id"`
 	BalanceId          int64  `json:"balance_id"`
@@ -38,7 +37,6 @@ type UpdateTransactionPayload struct {
 	ReceiverName       string `json:"receiver_name"`
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
-	Type               int64  `json:"type"`
 	SerialNo           string `json:"serial_no"`
 }
 
@@ -72,7 +70,6 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		ReceiverName:       payload.ReceiverName,
 		ReceiverPhone:      payload.ReceiverPhone,
 		Details:            payload.Details,
-		Type:               payload.Type,
 		CompanyId:          payload.CompanyId,
 		BalanceId:          payload.BalanceId,
 	}
@@ -232,7 +229,6 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 		ReceiverName:       payload.ReceiverName,
 		ReceiverPhone:      payload.ReceiverPhone,
 		Details:            payload.Details,
-		Type:               payload.Type,
 	}
 
 	if err := app.service.Transactions.Update(r.Context(), transaction); err != nil {
