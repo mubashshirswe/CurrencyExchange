@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	SELL = 1
+	SELL = 2
 	BUY  = 1
 )
 
