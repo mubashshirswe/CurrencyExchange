@@ -79,7 +79,7 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 	if err != nil {
 		return nil, err
 	}
-	// defer rows.Close()
+	defer rows.Close()
 
 	var balanceRecords []BalanceRecord
 	for rows.Next() {
