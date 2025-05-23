@@ -9,11 +9,6 @@ import (
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
 
-const (
-	SELL = 2
-	BUY  = 1
-)
-
 type BalanceRecordService struct {
 	store store.Storage
 }
@@ -35,7 +30,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return errors.New("CURRENCY IS NOT MATCH TO BALANCE CURRENCY")
 	}
 
-	if balanceRecord.Type == SELL {
+	if balanceRecord.Type == TYPE_SELL {
 		if balance.Balance < balanceRecord.Amount {
 			return errors.New("BALANCE IS NOT ENOUGH TO TRANSACTION")
 		} else {
@@ -75,7 +70,7 @@ func (s *BalanceRecordService) RollbackBalanceRecord(ctx context.Context, serial
 		return errors.New("CURRENCY IS NOT MATCH TO BALANCE CURRENCY")
 	}
 
-	if balanceRecord.Type == SELL {
+	if balanceRecord.Type == TYPE_SELL {
 		balance.Balance += balanceRecord.Amount
 		balance.InOutLay -= balanceRecord.Amount
 	} else {

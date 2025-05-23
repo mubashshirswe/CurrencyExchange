@@ -11,8 +11,8 @@ import (
 const (
 	TRANSACTION_STATUS_PENDING   = 1
 	TRANSACTION_STATUS_COMPLETED = 2
-	TYPE_SELL                    = 1
-	TYPE_BUY                     = 2
+	TYPE_SELL                    = 2
+	TYPE_BUY                     = 1
 )
 
 type TransactionService struct {
