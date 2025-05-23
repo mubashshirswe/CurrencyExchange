@@ -27,6 +27,10 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		return err
 	}
 
+	if transaction.SenderId == transaction.ReceiverId {
+		return fmt.Errorf("CAN NOT BE RECEIVER_ID AND SENDER_ID IS ONE PERSON")
+	}
+
 	balanceRecord := &store.BalanceRecord{
 		SerialNo:   serialNo,
 		Amount:     transaction.Amount,
@@ -44,6 +48,7 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 
 	transaction.Status = TRANSACTION_STATUS_PENDING
 	transaction.SerialNo = serialNo
+	transaction.Type = TYPE_BUY
 
 	if err := s.store.Transactions.Create(ctx, transaction); err != nil {
 		return err
@@ -101,7 +106,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 		CompanyID:  transaction.CompanyId,
 		Details:    transaction.Details,
 		CurrenctID: transaction.FromCurrencyTypeId,
-		Type:       transaction.Type,
+		Type:       TYPE_BUY,
 	}
 
 	if err := service.BalanceRecords.UpdateRecord(ctx, balanceRecord); err != nil {

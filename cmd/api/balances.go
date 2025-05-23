@@ -9,7 +9,6 @@ import (
 type CreateBalancePayload struct {
 	ID         int64 `json:"id"`
 	Balance    int64 `json:"balance"`
-	UserId     int64 `json:"user_id"`
 	InOutLay   int64 `json:"in_out_lay"`
 	CurrencyId int64 `json:"currency_id"`
 	OutInLay   int64 `json:"out_in_lay"`
@@ -19,7 +18,6 @@ type CreateBalancePayload struct {
 type UpdateBalancePayload struct {
 	ID         int64 `json:"id"`
 	Balance    int64 `json:"balance"`
-	UserId     int64 `json:"user_id"`
 	InOutLay   int64 `json:"in_out_lay"`
 	OutInLay   int64 `json:"out_in_lay"`
 	CurrencyId int64 `json:"currency_id"`
@@ -37,9 +35,11 @@ func (app *application) CreateBalanceHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	userID, _ := r.Context().Value(UserKey).(int)
+
 	balance := &store.Balance{
 		Balance:    payload.Balance,
-		UserId:     payload.UserId,
+		UserId:     int64(userID),
 		InOutLay:   payload.InOutLay,
 		OutInLay:   payload.OutInLay,
 		CurrencyId: payload.CurrencyId,
@@ -110,9 +110,10 @@ func (app *application) UpdateBalanceHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	userID, _ := r.Context().Value(UserKey).(int)
 	balance := &store.Balance{
 		Balance:  payload.Balance,
-		UserId:   payload.UserId,
+		UserId:   int64(userID),
 		InOutLay: payload.InOutLay,
 		OutInLay: payload.OutInLay,
 	}

@@ -13,14 +13,12 @@ type CreateTransactionPayload struct {
 	ServiceFee         int64  `json:"service_fee"`
 	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
 	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
-	SenderId           int64  `json:"sender_id"`
 	ReceiverId         int64  `json:"receiver_id"`
 	FromCityId         int64  `json:"from_city_id"`
 	ToCityId           int64  `json:"to_city_id"`
 	ReceiverName       string `json:"receiver_name"`
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
-	Type               int64  `json:"type"`
 	SerialNo           string `json:"serial_no"`
 	CompanyId          int64  `json:"company_id"`
 	BalanceId          int64  `json:"balance_id"`
@@ -31,14 +29,12 @@ type UpdateTransactionPayload struct {
 	ServiceFee         int64  `json:"service_fee"`
 	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
 	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
-	SenderId           int64  `json:"sender_id"`
 	ReceiverId         int64  `json:"receiver_id"`
 	FromCityId         int64  `json:"from_city_id"`
 	ToCityId           int64  `json:"to_city_id"`
 	ReceiverName       string `json:"receiver_name"`
 	ReceiverPhone      string `json:"receiver_phone"`
 	Details            string `json:"details"`
-	Type               int64  `json:"type"`
 	SerialNo           string `json:"serial_no"`
 }
 
@@ -60,19 +56,20 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
+	senderID, _ := r.Context().Value(UserKey).(int)
+
 	transaction := &store.Transaction{
 		Amount:             payload.Amount,
 		ServiceFee:         payload.ServiceFee,
 		FromCurrencyTypeId: payload.FromCurrencyTypeId,
 		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
-		SenderId:           payload.SenderId,
+		SenderId:           int64(senderID),
 		ReceiverId:         payload.ReceiverId,
 		FromCityId:         payload.FromCityId,
 		ToCityId:           payload.ToCityId,
 		ReceiverName:       payload.ReceiverName,
 		ReceiverPhone:      payload.ReceiverPhone,
 		Details:            payload.Details,
-		Type:               payload.Type,
 		CompanyId:          payload.CompanyId,
 		BalanceId:          payload.BalanceId,
 	}
@@ -218,6 +215,7 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 		app.badRequestResponse(w, r, err)
 		return
 	}
+	senderID, _ := r.Context().Value(UserKey).(int)
 
 	transaction := &store.Transaction{
 		SerialNo:           payload.SerialNo,
@@ -225,14 +223,13 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 		ServiceFee:         payload.ServiceFee,
 		FromCurrencyTypeId: payload.FromCurrencyTypeId,
 		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
-		SenderId:           payload.SenderId,
+		SenderId:           int64(senderID),
 		ReceiverId:         payload.ReceiverId,
 		FromCityId:         payload.FromCityId,
 		ToCityId:           payload.ToCityId,
 		ReceiverName:       payload.ReceiverName,
 		ReceiverPhone:      payload.ReceiverPhone,
 		Details:            payload.Details,
-		Type:               payload.Type,
 	}
 
 	if err := app.service.Transactions.Update(r.Context(), transaction); err != nil {
