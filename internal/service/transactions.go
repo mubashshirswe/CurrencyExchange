@@ -35,7 +35,7 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		CompanyID:  transaction.CompanyId,
 		Details:    transaction.Details,
 		CurrenctID: transaction.FromCurrencyTypeId,
-		Type:       TYPE_SELL,
+		Type:       TYPE_BUY,
 	}
 
 	if err := service.BalanceRecords.PerformBalanceRecord(ctx, balanceRecord); err != nil {
@@ -74,7 +74,7 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, serialNo s
 		CompanyID:  transaction.CompanyId,
 		Details:    transaction.Details,
 		CurrenctID: transaction.FromCurrencyTypeId,
-		Type:       TYPE_BUY,
+		Type:       TYPE_SELL,
 	}
 
 	if err := service.BalanceRecords.PerformBalanceRecord(ctx, balanceRecord); err != nil {
