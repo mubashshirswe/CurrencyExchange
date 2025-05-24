@@ -14,6 +14,7 @@ type CreateTransactionPayload struct {
 	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
 	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
 	ReceiverId         int64  `json:"receiver_id"`
+	SenderId           int64  `json:"sender_id"`
 	FromCityId         int64  `json:"from_city_id"`
 	ToCityId           int64  `json:"to_city_id"`
 	ReceiverName       string `json:"receiver_name"`
@@ -56,14 +57,12 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	senderID, _ := r.Context().Value(UserKey).(int)
-
 	transaction := &store.Transaction{
 		Amount:             payload.Amount,
 		ServiceFee:         payload.ServiceFee,
 		FromCurrencyTypeId: payload.FromCurrencyTypeId,
 		ToCurrencyTypeId:   payload.ToCurrencyTypeId,
-		SenderId:           int64(senderID),
+		SenderId:           payload.SenderId,
 		ReceiverId:         payload.ReceiverId,
 		FromCityId:         payload.FromCityId,
 		ToCityId:           payload.ToCityId,
