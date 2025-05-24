@@ -176,6 +176,10 @@ ORDER BY
 		return nil, err
 	}
 
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := tr.CreatedAt.In(loc)
+	tr.CreatedAt = createdAtInTashkent
+
 	return tr, nil
 }
 
@@ -284,6 +288,10 @@ ORDER BY
 	if err != nil {
 		return nil, err
 	}
+
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := tr.CreatedAt.In(loc)
+	tr.CreatedAt = createdAtInTashkent
 
 	return tr, nil
 }
@@ -516,6 +524,10 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 		if err != nil {
 			return nil, err
 		}
+
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := tr.CreatedAt.In(loc)
+		tr.CreatedAt = createdAtInTashkent
 
 		transactions = append(transactions, *tr)
 	}

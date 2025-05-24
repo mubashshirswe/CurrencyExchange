@@ -104,6 +104,10 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 			return nil, err
 		}
 
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := balance.CreatedAt.In(loc)
+		balance.CreatedAt = createdAtInTashkent
+
 		balanceRecords = append(balanceRecords, balance)
 	}
 
@@ -132,9 +136,14 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 		&balance.CreatedAt,
 		&balance.CurrencyType,
 	)
+
 	if err != nil {
 		return nil, err
 	}
+
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := balance.CreatedAt.In(loc)
+	balance.CreatedAt = createdAtInTashkent
 
 	return balance, nil
 }
@@ -175,6 +184,9 @@ func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) (
 			return nil, err
 		}
 
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := balance.CreatedAt.In(loc)
+		balance.CreatedAt = createdAtInTashkent
 		balanceRecords = append(balanceRecords, balance)
 	}
 
