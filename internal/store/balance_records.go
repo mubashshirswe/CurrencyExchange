@@ -69,7 +69,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 
 func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id int64) ([]BalanceRecord, error) {
 	query := `SELECT br.id, br.amount, br.user_id, br.balance_id, br.company_id, br.details, br.currency_id, br.type, br.serial_no, br.created_at, c.name
-		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.balance_id = $1`
+		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.balance_id = $1  ORDER BY br.created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -111,7 +111,7 @@ func (s *BalanceRecordStorage) GetByBalanceId(ctx context.Context, balance_id in
 
 func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo string) (*BalanceRecord, error) {
 	query := `SELECT br.id, br.amount, br.user_id, br.balance_id, br.company_id, br.details, br.currency_id, br.type, br.serial_no, br.created_at, c.name
-		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.serial_no = $1`
+		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.serial_no = $1  ORDER BY br.created_at DESC`
 
 	balance := &BalanceRecord{}
 	err := s.db.QueryRowContext(
@@ -140,7 +140,7 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 
 func (s *BalanceRecordStorage) GetByUserId(ctx context.Context, user_id int64) ([]BalanceRecord, error) {
 	query := `SELECT br.id, br.amount, br.user_id, br.balance_id, br.company_id, br.details, br.currency_id, br.type, br.serial_no, br.created_at, c.name
-		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.user_id = $1`
+		FROM balance_records br join currencies c on br.currency_id = c.id WHERE br.user_id = $1 ORDER BY br.created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,

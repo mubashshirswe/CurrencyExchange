@@ -208,7 +208,7 @@ LEFT JOIN
     currencies ct ON t.to_currency_type_id = ct.id
 WHERE t.status = $1
 ORDER BY 
-    t.serial_no DESC`
+    t.created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
