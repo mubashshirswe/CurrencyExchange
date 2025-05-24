@@ -5,29 +5,30 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type Transaction struct {
-	ID                 int64  `json:"id"`
-	Amount             int64  `json:"amount"`
-	ServiceFee         int64  `json:"service_fee"`
-	FromCurrencyTypeId int64  `json:"from_currency_type_id"`
-	ToCurrencyTypeId   int64  `json:"to_currency_type_id"`
-	SenderId           int64  `json:"sender_id"`
-	SerialNo           string `json:"serial_no"`
-	ReceiverId         int64  `json:"receiver_id"`
-	FromCityId         int64  `json:"from_city_id"`
-	ToCityId           int64  `json:"to_city_id"`
-	ReceiverName       string `json:"receiver_name"`
-	ReceiverPhone      string `json:"receiver_phone"`
-	Details            string `json:"details"`
-	Type               int64  `json:"type"`
-	FromCurrencyType   string `json:"from_currency_type"`
-	ToCurrencyType     string `json:"to_currency_type"`
-	Status             int64  `json:"status"`
-	CompanyId          int64  `json:"company_id"`
-	BalanceId          int64  `json:"balance_id"`
-	CreatedAt          string `json:"created_at"`
+	ID                 int64     `json:"id"`
+	Amount             int64     `json:"amount"`
+	ServiceFee         int64     `json:"service_fee"`
+	FromCurrencyTypeId int64     `json:"from_currency_type_id"`
+	ToCurrencyTypeId   int64     `json:"to_currency_type_id"`
+	SenderId           int64     `json:"sender_id"`
+	SerialNo           string    `json:"serial_no"`
+	ReceiverId         int64     `json:"receiver_id"`
+	FromCityId         int64     `json:"from_city_id"`
+	ToCityId           int64     `json:"to_city_id"`
+	ReceiverName       string    `json:"receiver_name"`
+	ReceiverPhone      string    `json:"receiver_phone"`
+	Details            string    `json:"details"`
+	Type               int64     `json:"type"`
+	FromCurrencyType   string    `json:"from_currency_type"`
+	ToCurrencyType     string    `json:"to_currency_type"`
+	Status             int64     `json:"status"`
+	CompanyId          int64     `json:"company_id"`
+	BalanceId          int64     `json:"balance_id"`
+	CreatedAt          time.Time `json:"created_at"`
 }
 
 type TransactionStorage struct {

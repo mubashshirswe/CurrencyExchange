@@ -3,20 +3,21 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 type BalanceRecord struct {
-	ID           int64  `json:"id"`
-	Amount       int64  `json:"amount"`
-	SerialNo     string `json:"serial_no"`
-	UserID       int64  `json:"user_id"`
-	BalanceID    int64  `json:"balance_id"`
-	CompanyID    int64  `json:"company_id"`
-	Details      string `json:"details"`
-	CurrenctID   int64  `json:"currency_id"`
-	Type         int64  `json:"type"`
-	CurrencyType string `json:"currency_type"`
-	CreatedAt    string `json:"created_at"`
+	ID           int64     `json:"id"`
+	Amount       int64     `json:"amount"`
+	SerialNo     string    `json:"serial_no"`
+	UserID       int64     `json:"user_id"`
+	BalanceID    int64     `json:"balance_id"`
+	CompanyID    int64     `json:"company_id"`
+	Details      string    `json:"details"`
+	CurrenctID   int64     `json:"currency_id"`
+	Type         int64     `json:"type"`
+	CurrencyType string    `json:"currency_type"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 type BalanceRecordStorage struct {
