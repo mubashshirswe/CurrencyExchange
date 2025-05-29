@@ -14,8 +14,9 @@ type BalanceRecordService struct {
 }
 
 func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balanceRecord *store.BalanceRecord) error {
-	serialNo := GenerateSerialNo(time.Hour.Microseconds())
-	balanceRecord.SerialNo = serialNo
+	if balanceRecord.SerialNo == "" {
+		balanceRecord.SerialNo = GenerateSerialNo(time.Hour.Microseconds())
+	}
 
 	balance, err := s.store.Balances.GetById(ctx, &balanceRecord.BalanceID)
 	if err != nil {

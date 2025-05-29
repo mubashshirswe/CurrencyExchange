@@ -9,6 +9,7 @@ type Storage struct {
 	Debtors interface {
 		Create(context.Context, *Debtors) error
 		Update(context.Context, *Debtors) error
+		GetById(context.Context, int64) (*Debtors, error)
 		GetByUserId(context.Context, int64) ([]Debtors, error)
 		Delete(context.Context, int64) error
 	}

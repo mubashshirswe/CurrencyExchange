@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS debtors (
     debtors_name varchar(255) NOT NULL,
     debtors_phone varchar(9) NOT NULL,
     currency_id bigint NOT NULL,
+    is_balance_effect int NOT NULL,
+    currency_type varchar(255) NOT NULL,
     type bigint NOT NULL,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );

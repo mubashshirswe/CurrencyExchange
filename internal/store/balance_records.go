@@ -125,7 +125,6 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 		serialNo,
 	).Scan(
 		&balance.ID,
-		&balance.SerialNo,
 		&balance.Amount,
 		&balance.UserID,
 		&balance.BalanceID,
@@ -133,6 +132,7 @@ func (s *BalanceRecordStorage) GetBySerialNo(ctx context.Context, serialNo strin
 		&balance.Details,
 		&balance.CurrenctID,
 		&balance.Type,
+		&balance.SerialNo,
 		&balance.CreatedAt,
 		&balance.CurrencyType,
 	)

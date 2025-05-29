@@ -7,15 +7,18 @@ import (
 )
 
 type Debtors struct {
-	UserID       int64  `json:"user_id"`
-	Amount       int64  `json:"amount"`
-	BalanceId    int64  `json:"balance_id"`
-	CompanyId    int64  `json:"company_id"`
-	Details      string `json:"details"`
-	DebtorsName  string `json:"debtors_name"`
-	DebtorsPhone string `json:"debtors_phone"`
-	CurrencyId   int64  `json:"currency_id"`
-	Type         int    `json:"type"`
+	UserID          int64  `json:"user_id"`
+	Amount          int64  `json:"amount"`
+	SerialNo        string `json:"serial_no"`
+	BalanceId       int64  `json:"balance_id"`
+	CompanyId       int64  `json:"company_id"`
+	Details         string `json:"details"`
+	DebtorsName     string `json:"debtors_name"`
+	DebtorsPhone    string `json:"debtors_phone"`
+	CurrencyId      int64  `json:"currency_id"`
+	CurrencyType    string `json:"currency_type"`
+	Type            int    `json:"type"`
+	IsBalanceEffect int    `json:"is_balance_effect"`
 }
 
 func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
@@ -26,14 +29,15 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	debtor := &store.Debtors{
-		UserID:       payload.UserID,
-		Amount:       payload.Amount,
-		BalanceId:    payload.BalanceId,
-		CompanyId:    payload.CompanyId,
-		Details:      payload.Details,
-		DebtorsName:  payload.DebtorsName,
-		DebtorsPhone: payload.DebtorsPhone,
-		CurrencyId:   payload.CurrencyId,
+		UserID:          payload.UserID,
+		Amount:          payload.Amount,
+		BalanceId:       payload.BalanceId,
+		CompanyId:       payload.CompanyId,
+		Details:         payload.Details,
+		DebtorsName:     payload.DebtorsName,
+		DebtorsPhone:    payload.DebtorsPhone,
+		CurrencyId:      payload.CurrencyId,
+		IsBalanceEffect: payload.IsBalanceEffect,
 	}
 
 	if err := app.service.Debtors.Create(r.Context(), debtor); err != nil {
@@ -55,15 +59,17 @@ func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	debtor := &store.Debtors{
-		ID:           getIDFromContext(r),
-		UserID:       payload.UserID,
-		Amount:       payload.Amount,
-		BalanceId:    payload.BalanceId,
-		CompanyId:    payload.CompanyId,
-		Details:      payload.Details,
-		DebtorsName:  payload.DebtorsName,
-		DebtorsPhone: payload.DebtorsPhone,
-		CurrencyId:   payload.CurrencyId,
+		ID:              getIDFromContext(r),
+		UserID:          payload.UserID,
+		SerialNo:        payload.SerialNo,
+		Amount:          payload.Amount,
+		BalanceId:       payload.BalanceId,
+		CompanyId:       payload.CompanyId,
+		Details:         payload.Details,
+		DebtorsName:     payload.DebtorsName,
+		DebtorsPhone:    payload.DebtorsPhone,
+		CurrencyId:      payload.CurrencyId,
+		IsBalanceEffect: payload.IsBalanceEffect,
 	}
 
 	if err := app.service.Debtors.Update(r.Context(), debtor); err != nil {
@@ -78,7 +84,6 @@ func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) GetDebtorsByUserIdHandler(w http.ResponseWriter, r *http.Request) {
-
 	debtors, err := app.service.Debtors.GetByUserId(r.Context(), getIDFromContext(r))
 	if err != nil {
 		app.internalServerError(w, r, err)
@@ -91,9 +96,23 @@ func (app *application) GetDebtorsByUserIdHandler(w http.ResponseWriter, r *http
 	}
 }
 
-func (app *application) DeleteHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) GetDebtorsByIdHandler(w http.ResponseWriter, r *http.Request) {
+	debtors, err := app.store.Debtors.GetById(r.Context(), getIDFromContext(r))
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
 
-	if err := app.service.Debtors.Delete(r.Context(), getIDFromContext(r)); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, debtors); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) DeleteDebtorsHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+
+	if err := app.service.Debtors.Delete(r.Context(), id); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
