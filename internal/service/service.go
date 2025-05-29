@@ -9,6 +9,12 @@ import (
 )
 
 type Service struct {
+	Debtors interface {
+		Update(context.Context, *store.Debtors) error
+		Create(context.Context, *store.Debtors) error
+		GetByUserId(context.Context, int64) ([]store.Debtors, error)
+		Delete(context.Context, int64) error
+	}
 	BalanceRecords interface {
 		PerformBalanceRecord(context.Context, *store.BalanceRecord) error
 		RollbackBalanceRecord(context.Context, string) error
@@ -27,9 +33,10 @@ func NewService(store store.Storage) Service {
 	return Service{
 		BalanceRecords: &BalanceRecordService{store: store},
 		Transactions:   &TransactionService{store: store},
+		Debtors:        &DebtorsService{store: store},
 	}
 }
 
 func GenerateSerialNo(id int64) string {
-	return fmt.Sprintf("%v%v", id, rand.Intn(10000))
+	return fmt.Sprintf("%v%v", id, rand.Intn(10000000))
 }

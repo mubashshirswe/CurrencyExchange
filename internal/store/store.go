@@ -6,6 +6,13 @@ import (
 )
 
 type Storage struct {
+	Debtors interface {
+		Create(context.Context, *Debtors) error
+		Update(context.Context, *Debtors) error
+		GetByUserId(context.Context, int64) ([]Debtors, error)
+		Delete(context.Context, int64) error
+	}
+
 	Users interface {
 		Login(context.Context, *User) error
 		Create(context.Context, *User) error
@@ -79,6 +86,7 @@ type Storage struct {
 
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
+		Debtors:        &DebtorsStorage{db: db},
 		Users:          &UserStorage{db: db},
 		Transactions:   &TransactionStorage{db: db},
 		Currencies:     &CurrencyStorage{db: db},
