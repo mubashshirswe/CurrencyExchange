@@ -29,6 +29,8 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	debtor := &store.Debtors{
+		Type:            payload.Type,
+		CurrencyType:    payload.CurrencyType,
 		UserID:          payload.UserID,
 		Amount:          payload.Amount,
 		BalanceId:       payload.BalanceId,
@@ -60,6 +62,8 @@ func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 
 	debtor := &store.Debtors{
 		ID:              getIDFromContext(r),
+		Type:            payload.Type,
+		CurrencyType:    payload.CurrencyType,
 		UserID:          payload.UserID,
 		SerialNo:        payload.SerialNo,
 		Amount:          payload.Amount,
