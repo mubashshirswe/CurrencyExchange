@@ -16,7 +16,7 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 	service := NewService(s.store)
 	debtor.SerialNo = GenerateSerialNo(time.Hour.Microseconds())
 
-	if debtor.IsBalanceEffect == 1 {
+	if debtor.IsBalanceEffect == 1 && debtor.Type == TYPE_BUY {
 		if err := service.BalanceRecords.PerformBalanceRecord(ctx, ConvertDebitsDataToBalanceRecords(debtor)); err != nil {
 			return err
 		}
@@ -58,6 +58,22 @@ func (s *DebtorsService) Delete(ctx context.Context, id int64) error {
 	if debtor.IsBalanceEffect == 1 {
 		if err := service.BalanceRecords.RollbackBalanceRecord(ctx, debtor.SerialNo); err != nil {
 			return fmt.Errorf("ERROR OCCURRED WHILE RollbackBalanceRecord %e", err)
+		}
+	}
+
+	return s.store.Debtors.Delete(ctx, id)
+}
+
+func (s *DebtorsService) ReceivedDebt(ctx context.Context, id int64) error {
+	service := NewService(s.store)
+	debtor, err := s.store.Debtors.GetById(ctx, id)
+	if err != nil {
+		return fmt.Errorf("ERROR OCCURRED WHILE GET BY ID %e", err)
+	}
+
+	if debtor.IsBalanceEffect == 1 {
+		if err := service.BalanceRecords.PerformBalanceRecord(ctx, ConvertDebitsDataToBalanceRecords(debtor)); err != nil {
+			return err
 		}
 	}
 

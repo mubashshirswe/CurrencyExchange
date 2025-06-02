@@ -12,6 +12,7 @@ type Service struct {
 	Debtors interface {
 		Update(context.Context, *store.Debtors) error
 		Create(context.Context, *store.Debtors) error
+		ReceivedDebt(context.Context, int64) error
 		GetByUserId(context.Context, int64) ([]store.Debtors, error)
 		Delete(context.Context, int64) error
 	}

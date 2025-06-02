@@ -100,6 +100,19 @@ func (app *application) GetDebtorsByUserIdHandler(w http.ResponseWriter, r *http
 	}
 }
 
+func (app *application) ReceivedDebtHandler(w http.ResponseWriter, r *http.Request) {
+	err := app.service.Debtors.ReceivedDebt(r.Context(), getIDFromContext(r))
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "SUCCESS"); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) GetDebtorsByIdHandler(w http.ResponseWriter, r *http.Request) {
 	debtors, err := app.store.Debtors.GetById(r.Context(), getIDFromContext(r))
 	if err != nil {

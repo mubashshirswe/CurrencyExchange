@@ -99,6 +99,7 @@ func (app *application) mount() *chi.Mux {
 			r.Route("/debtors", func(r chi.Router) {
 				r.Post("/", app.CreateDebtorsHandler)
 				r.Get("/user/{id}", app.GetDebtorsByUserIdHandler)
+				r.Get("/receive/{id}", app.ReceivedDebtHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", app.GetDebtorsByIdHandler)
 					r.Put("/", app.UpdateDebtorsHandler)
