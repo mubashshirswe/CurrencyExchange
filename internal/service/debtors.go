@@ -16,7 +16,7 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 	service := NewService(s.store)
 	debtor.SerialNo = GenerateSerialNo(time.Hour.Microseconds())
 
-	if debtor.IsBalanceEffect == 1 && debtor.Type == TYPE_BUY {
+	if debtor.IsBalanceEffect == 1 && debtor.Type != TYPE_BUY {
 		if err := service.BalanceRecords.PerformBalanceRecord(ctx, ConvertDebitsDataToBalanceRecords(debtor)); err != nil {
 			return err
 		}
