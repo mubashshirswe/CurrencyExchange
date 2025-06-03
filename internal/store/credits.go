@@ -110,7 +110,7 @@ func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debto
 func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error) {
 	query := `SELECT id, user_id, amount, serial_no, balance_id, company_id, 
 						details, debtors_name, debtors_phone, currency_id, 
-						type, created_at, is_balance_effect, currency_type, status FROM debtors WHERE id = $1 and status == 1`
+						type, created_at, is_balance_effect, currency_type, status FROM debtors WHERE id = $1 and status = 1`
 
 	fmt.Printf("GetById ID %v", id)
 
