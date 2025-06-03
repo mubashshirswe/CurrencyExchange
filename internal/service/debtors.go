@@ -61,6 +61,7 @@ func (s *DebtorsService) Delete(ctx context.Context, id int64) error {
 		}
 	}
 	debtor.Status = -1
+	debtor.SerialNo = GenerateSerialNo(debtor.ID)
 	return s.store.Debtors.Update(ctx, debtor)
 }
 
@@ -75,6 +76,7 @@ func (s *DebtorsService) ReceivedDebt(ctx context.Context, id int64) error {
 		}
 
 		debtor.Status = -1
+		debtor.SerialNo = GenerateSerialNo(debtor.ID)
 		return s.store.Debtors.Update(ctx, debtor)
 	}
 
