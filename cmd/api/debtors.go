@@ -18,6 +18,7 @@ type Debtors struct {
 	CurrencyId      int64  `json:"currency_id"`
 	CurrencyType    string `json:"currency_type"`
 	Type            int    `json:"type"`
+	Status          int    `json:"status"`
 	IsBalanceEffect int    `json:"is_balance_effect"`
 }
 
@@ -39,6 +40,7 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 		DebtorsName:     payload.DebtorsName,
 		DebtorsPhone:    payload.DebtorsPhone,
 		CurrencyId:      payload.CurrencyId,
+		Status:          1,
 		IsBalanceEffect: payload.IsBalanceEffect,
 	}
 
@@ -73,6 +75,7 @@ func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 		DebtorsName:     payload.DebtorsName,
 		DebtorsPhone:    payload.DebtorsPhone,
 		CurrencyId:      payload.CurrencyId,
+		Status:          1,
 		IsBalanceEffect: payload.IsBalanceEffect,
 	}
 

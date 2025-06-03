@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS debtors (
     is_balance_effect int NOT NULL,
     currency_type varchar(255) NOT NULL,
     type bigint NOT NULL,
+    status  bigint DEFAULT NULL,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );
 

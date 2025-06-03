@@ -60,24 +60,23 @@ func (s *DebtorsService) Delete(ctx context.Context, id int64) error {
 			return fmt.Errorf("ERROR OCCURRED WHILE RollbackBalanceRecord %e", err)
 		}
 	}
-
-	return s.store.Debtors.Delete(ctx, id)
+	debtor.Status = -1
+	return s.store.Debtors.Update(ctx, debtor)
 }
 
 func (s *DebtorsService) ReceivedDebt(ctx context.Context, id int64) error {
 	service := NewService(s.store)
 	debtor, err := s.store.Debtors.GetById(ctx, id)
-	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE GET BY ID %e", err)
-	}
-
-	if debtor.IsBalanceEffect == 1 {
-		if err := service.BalanceRecords.PerformBalanceRecord(ctx, ConvertDebitsDataToBalanceRecords(debtor)); err != nil {
-			return err
+	if err == nil {
+		if debtor.IsBalanceEffect == 1 {
+			if err := service.BalanceRecords.PerformBalanceRecord(ctx, ConvertDebitsDataToBalanceRecords(debtor)); err != nil {
+				return err
+			}
 		}
 	}
 
-	return s.store.Debtors.Delete(ctx, id)
+	debtor.Status = -1
+	return s.store.Debtors.Update(ctx, debtor)
 }
 
 func ConvertDebitsDataToBalanceRecords(debtor *store.Debtors) *store.BalanceRecord {
