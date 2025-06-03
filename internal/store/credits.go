@@ -62,7 +62,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debtors, error) {
 	query := `SELECT id, user_id, amount, serial_no, balance_id, company_id, 
 						details, debtors_name, debtors_phone, currency_id, 
-						type, created_at, is_balance_effect, currency_type, status FROM debtors WHERE user_id = $1 and status == 1`
+						type, created_at, is_balance_effect, currency_type, status FROM debtors WHERE user_id = $1 and status = 1`
 
 	var credits []Debtors
 	rows, err := s.db.QueryContext(
@@ -146,7 +146,7 @@ func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error
 
 func (s *DebtorsStorage) Update(ctx context.Context, credits *Debtors) error {
 	query := `UPDATE debtors SET amount = $1, balance_id = $2, company_id = $3, details = $4, debtors_name = $5, 
-					debtors_phone = $6, currency_id = $7, type = $8, is_balance_effect = $9, currency_type = $10, status = $11 WHERE id = $12 and status == 1`
+					debtors_phone = $6, currency_id = $7, type = $8, is_balance_effect = $9, currency_type = $10, status = $11 WHERE id = $12 and status = 1`
 
 	rows, err := s.db.ExecContext(
 		ctx,
