@@ -67,8 +67,12 @@ func (s *DebtorsService) Delete(ctx context.Context, id int64) error {
 
 func (s *DebtorsService) ReceivedDebt(ctx context.Context, id int64) error {
 	service := NewService(s.store)
+
 	debtor, err := s.store.Debtors.GetById(ctx, id)
+	debtor.SerialNo = GenerateSerialNo(debtor.ID)
+
 	if err == nil {
+
 		if debtor.IsBalanceEffect == 1 {
 			if err := service.BalanceRecords.PerformBalanceRecord(ctx, ConvertDebitsDataToBalanceRecords(debtor)); err != nil {
 				return err
@@ -76,7 +80,6 @@ func (s *DebtorsService) ReceivedDebt(ctx context.Context, id int64) error {
 		}
 
 		debtor.Status = -1
-		debtor.SerialNo = GenerateSerialNo(debtor.ID)
 		return s.store.Debtors.Update(ctx, debtor)
 	}
 
