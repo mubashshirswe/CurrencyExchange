@@ -73,10 +73,12 @@ func (s *DebtorsService) ReceivedDebt(ctx context.Context, id int64) error {
 				return err
 			}
 		}
+
+		debtor.Status = -1
+		return s.store.Debtors.Update(ctx, debtor)
 	}
 
-	debtor.Status = -1
-	return s.store.Debtors.Update(ctx, debtor)
+	return err
 }
 
 func ConvertDebitsDataToBalanceRecords(debtor *store.Debtors) *store.BalanceRecord {
