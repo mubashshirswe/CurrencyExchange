@@ -13,6 +13,7 @@ type User struct {
 	Role      int64   `json:"role"`
 	Password  string  `json:"password"`
 	Avatar    *string `json:"avatar"`
+	CompanyId int64   `json:"company_id"`
 	CreatedAt string  `json:"created_at"`
 }
 
@@ -21,7 +22,7 @@ type UserStorage struct {
 }
 
 func (s *UserStorage) Create(ctx context.Context, user *User) error {
-	query := `INSERT INTO users(username, phone, password, role)
+	query := `INSERT INTO users(username, phone, password, role, company_id)
 				VALUES($1, $2, $3, $4) RETURNING id, created_at`
 
 	err := s.db.QueryRowContext(
@@ -30,7 +31,8 @@ func (s *UserStorage) Create(ctx context.Context, user *User) error {
 		user.Username,
 		user.Phone,
 		user.Password,
-		user.Role).Scan(
+		user.Role,
+		user.CompanyId).Scan(
 		&user.ID,
 		&user.CreatedAt,
 	)
@@ -56,6 +58,7 @@ func (s *UserStorage) Login(ctx context.Context, user *User) error {
 		&user.Avatar,
 		&user.Username,
 		&user.Password,
+		&user.CompanyId,
 		&user.CreatedAt,
 	)
 
@@ -78,6 +81,7 @@ func (s *UserStorage) GetById(ctx context.Context, id *int64) (*User, error) {
 		&user.Avatar,
 		&user.Username,
 		&user.Password,
+		&user.CompanyId,
 		&user.CreatedAt,
 	)
 
@@ -110,6 +114,7 @@ func (s *UserStorage) GetAll(ctx context.Context) ([]User, error) {
 			&user.Avatar,
 			&user.Username,
 			&user.Password,
+			&user.CompanyId,
 			&user.CreatedAt,
 		)
 
@@ -120,7 +125,7 @@ func (s *UserStorage) GetAll(ctx context.Context) ([]User, error) {
 }
 
 func (s *UserStorage) Update(ctx context.Context, user *User) error {
-	query := `UPDATE users SET username = $1, password = $2, role = $3, avatar = $4 WHERE id = $5`
+	query := `UPDATE users SET username = $1, password = $2, role = $3, avatar = $4, company_id = $5 WHERE id = $6`
 
 	result, err := s.db.ExecContext(
 		ctx,
@@ -129,6 +134,7 @@ func (s *UserStorage) Update(ctx context.Context, user *User) error {
 		user.Password,
 		user.Role,
 		user.Avatar,
+		user.CompanyId,
 		user.ID)
 
 	if err != nil {

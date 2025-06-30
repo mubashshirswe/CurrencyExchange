@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
@@ -20,98 +19,53 @@ type TransactionService struct {
 }
 
 func (s *TransactionService) PerformTransaction(ctx context.Context, transaction *store.Transaction) error {
-	service := NewService(s.store)
-	serialNo := GenerateSerialNo(time.Hour.Microseconds())
-
-	if _, err := s.CheckReceiverBalance(ctx, transaction); err != nil {
+	balance, err := s.store.Balances.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
+	if err != nil {
 		return err
 	}
 
-	if transaction.SenderId == transaction.ReceiverId {
-		return fmt.Errorf("CAN NOT BE RECEIVER_ID AND SENDER_ID IS ONE PERSON")
+	switch transaction.Type {
+	case TYPE_SELL:
+		if balance.Balance >= transaction.ReceivedAmount {
+			balance.Balance -= transaction.ReceivedAmount
+			balance.InOutLay += transaction.ReceivedAmount
+		} else {
+			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THIS %v", err)
+		}
+	case TYPE_BUY:
+		balance.Balance += transaction.ReceivedAmount
+		balance.OutInLay += transaction.ReceivedAmount
+	default:
+		return fmt.Errorf("FOUND UNKNOWN TYPE")
+	}
+
+	if err := s.store.Transactions.Create(ctx, transaction); err != nil {
+		return fmt.Errorf("ERROR OCCURRED WHILE Transactions.Create %v", err)
 	}
 
 	balanceRecord := &store.BalanceRecord{
-		SerialNo:   serialNo,
-		Amount:     transaction.Amount,
-		UserID:     transaction.SenderId,
-		BalanceID:  transaction.BalanceId,
-		CompanyID:  transaction.CompanyId,
-		Details:    transaction.Details,
-		CurrenctID: transaction.FromCurrencyTypeId,
-		Type:       TYPE_BUY,
+		Amount:        transaction.ReceivedAmount,
+		Currency:      transaction.ReceivedCurrency,
+		BalanceID:     balance.ID,
+		CompanyID:     balance.CompanyId,
+		UserID:        transaction.ReceivedUserId,
+		Type:          transaction.Type,
+		TransactionId: &transaction.ID,
 	}
 
-	if err := service.BalanceRecords.PerformBalanceRecord(ctx, balanceRecord); err != nil {
-		return err
-	}
-
-	transaction.Status = TRANSACTION_STATUS_PENDING
-	transaction.SerialNo = serialNo
-	transaction.Type = TYPE_BUY
-
-	if err := s.store.Transactions.Create(ctx, transaction); err != nil {
-		return err
+	if err := s.store.BalanceRecords.Create(ctx, balanceRecord); err != nil {
+		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
 	}
 
 	return nil
 }
 
 func (s *TransactionService) CompleteTransaction(ctx context.Context, serialNo string) error {
-	service := NewService(s.store)
-	transaction, err := s.store.Transactions.GetByField(ctx, "serial_no", serialNo)
-	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE FINDING TRANSACTION BY SERIAL NO %v", err)
-	}
-
-	serialNo = GenerateSerialNo(time.Hour.Microseconds())
-
-	balanceId, err := s.CheckReceiverBalance(ctx, transaction)
-	if err != nil {
-		return err
-	}
-
-	balanceRecord := &store.BalanceRecord{
-		SerialNo:   serialNo,
-		Amount:     transaction.Amount,
-		UserID:     transaction.ReceiverId,
-		BalanceID:  *balanceId,
-		CompanyID:  transaction.CompanyId,
-		Details:    transaction.Details,
-		CurrenctID: transaction.FromCurrencyTypeId,
-		Type:       TYPE_SELL,
-	}
-
-	if err := service.BalanceRecords.PerformBalanceRecord(ctx, balanceRecord); err != nil {
-		return err
-	}
-
-	transaction.Status = TRANSACTION_STATUS_COMPLETED
-
-	if err := s.store.Transactions.Update(ctx, transaction); err != nil {
-		return err
-	}
 
 	return nil
 }
 
 func (s *TransactionService) Update(ctx context.Context, transaction *store.Transaction) error {
-	service := NewService(s.store)
-
-	balanceRecord := &store.BalanceRecord{
-		SerialNo:   transaction.SerialNo,
-		Amount:     transaction.Amount,
-		UserID:     transaction.SenderId,
-		BalanceID:  transaction.BalanceId,
-		CompanyID:  transaction.CompanyId,
-		Details:    transaction.Details,
-		CurrenctID: transaction.FromCurrencyTypeId,
-		Type:       TYPE_BUY,
-	}
-
-	if err := service.BalanceRecords.UpdateRecord(ctx, balanceRecord); err != nil {
-		return err
-	}
 
 	if err := s.store.Transactions.Update(ctx, transaction); err != nil {
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING TRANSACTION %v", err)
@@ -121,56 +75,10 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 }
 
 func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
-	service := NewService(s.store)
 
-	transaction, err := s.store.Transactions.GetById(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	if err := service.BalanceRecords.RollbackBalanceRecord(ctx, transaction.SerialNo); err != nil {
-		return err
-	}
-
-	if err := s.store.Transactions.Delete(ctx, &transaction.ID); err != nil {
+	if err := s.store.Transactions.Delete(ctx, id); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (s *TransactionService) CheckReceiverBalance(ctx context.Context, transaction *store.Transaction) (*int64, error) {
-	balances, err := s.store.Balances.GetByUserId(ctx, &transaction.ReceiverId)
-	if err != nil {
-		return nil, fmt.Errorf("ERROR OCCURRED WHILE CHECKING RECEIVER BALANCE INFO %v", err)
-	}
-
-	if balances == nil {
-		return nil, fmt.Errorf("BALANCE NOT FOUND WITH ID %v", transaction.ReceiverId)
-	}
-
-	if transaction.FromCurrencyTypeId != transaction.ToCurrencyTypeId {
-		return nil, fmt.Errorf("BALANCE CURRENCIES DO NOT MATCH")
-	}
-
-	var isFlag bool
-	var balanceId *int64
-	for _, o := range balances {
-		if o.CurrencyId == transaction.ToCurrencyTypeId {
-			isFlag = true
-			if o.Balance > transaction.Amount {
-				balanceId = &o.ID
-			}
-		}
-	}
-
-	if !isFlag {
-		return nil, fmt.Errorf("RECEIVER BALANCE CURRENCY DO NOT MATCH")
-	}
-
-	if balanceId == nil {
-		return nil, fmt.Errorf("RECEIVER BALANCE HAVE NO ENOUGH MONEY OR BALANCE NOT FOUND")
-	}
-
-	return balanceId, nil
 }

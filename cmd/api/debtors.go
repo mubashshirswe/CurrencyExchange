@@ -6,42 +6,37 @@ import (
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
 
-type Debtors struct {
-	UserID          int64  `json:"user_id"`
-	Amount          int64  `json:"amount"`
-	SerialNo        string `json:"serial_no"`
-	BalanceId       int64  `json:"balance_id"`
-	CompanyId       int64  `json:"company_id"`
-	Details         string `json:"details"`
-	DebtorsName     string `json:"debtors_name"`
-	DebtorsPhone    string `json:"debtors_phone"`
-	CurrencyId      int64  `json:"currency_id"`
-	CurrencyType    string `json:"currency_type"`
-	Type            int    `json:"type"`
-	Status          int    `json:"status"`
-	IsBalanceEffect int    `json:"is_balance_effect"`
+type DebtorPayload struct {
+	ReceivedAmount   int64   `json:"received_amount"`
+	ReceivedCurrency string  `json:"received_currency"`
+	DebtedAmount     int64   `json:"debted_amount"`
+	DebtedCurrency   string  `json:"debted_currency"`
+	UserID           int64   `json:"user_id"`
+	Details          *string `json:"details"`
+	Phone            *string `json:"phone"`
+	IsBalanceEffect  int     `json:"is_balance_effect"`
+	Type             int     `json:"type"`
+	Status           int     `json:"status"`
 }
 
 func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
-	var payload Debtors
+	var payload DebtorPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
 	debtor := &store.Debtors{
-		Type:            payload.Type,
-		CurrencyType:    payload.CurrencyType,
-		UserID:          payload.UserID,
-		Amount:          payload.Amount,
-		BalanceId:       payload.BalanceId,
-		CompanyId:       payload.CompanyId,
-		Details:         payload.Details,
-		DebtorsName:     payload.DebtorsName,
-		DebtorsPhone:    payload.DebtorsPhone,
-		CurrencyId:      payload.CurrencyId,
-		Status:          1,
-		IsBalanceEffect: payload.IsBalanceEffect,
+		ReceivedAmount:   payload.ReceivedAmount,
+		ReceivedCurrency: payload.ReceivedCurrency,
+		DebtedAmount:     payload.DebtedAmount,
+		DebtedCurrency:   payload.DebtedCurrency,
+		UserID:           payload.UserID,
+		Details:          payload.Details,
+		Phone:            payload.Phone,
+		IsBalanceEffect:  payload.IsBalanceEffect,
+		Type:             payload.Type,
+		Status:           1,
 	}
 
 	if err := app.service.Debtors.Create(r.Context(), debtor); err != nil {
@@ -56,61 +51,31 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
-	var payload Debtors
+	var payload *store.BalanceRecord
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	debtor := &store.Debtors{
-		ID:              getIDFromContext(r),
-		Type:            payload.Type,
-		CurrencyType:    payload.CurrencyType,
-		UserID:          payload.UserID,
-		SerialNo:        payload.SerialNo,
-		Amount:          payload.Amount,
-		BalanceId:       payload.BalanceId,
-		CompanyId:       payload.CompanyId,
-		Details:         payload.Details,
-		DebtorsName:     payload.DebtorsName,
-		DebtorsPhone:    payload.DebtorsPhone,
-		CurrencyId:      payload.CurrencyId,
-		Status:          1,
-		IsBalanceEffect: payload.IsBalanceEffect,
-	}
-
-	if err := app.service.Debtors.Update(r.Context(), debtor); err != nil {
+	if err := app.service.Debtors.Update(r.Context(), payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, debtor); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 }
 
-func (app *application) GetDebtorsByUserIdHandler(w http.ResponseWriter, r *http.Request) {
-	debtors, err := app.service.Debtors.GetByUserId(r.Context(), getIDFromContext(r))
+func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
+	debtors, err := app.service.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
 	if err := app.writeResponse(w, http.StatusOK, debtors); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-}
-
-func (app *application) ReceivedDebtHandler(w http.ResponseWriter, r *http.Request) {
-	err := app.service.Debtors.ReceivedDebt(r.Context(), getIDFromContext(r))
-	if err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
-
-	if err := app.writeResponse(w, http.StatusOK, "SUCCESS"); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

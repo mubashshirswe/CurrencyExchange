@@ -12,16 +12,10 @@ type Storage struct {
 		Get(context.Context, int64) (*store.User, error)
 		Set(context.Context, *store.User) error
 	}
-
-	Employees interface {
-		Get(context.Context, int64) (*store.Employee, error)
-		Set(context.Context, *store.Employee) error
-	}
 }
 
 func NewRedisStorage(redis *redis.Client) Storage {
 	return Storage{
-		Users:     &UsersStore{rdb: redis},
-		Employees: &EmployeeStore{rdb: redis},
+		Users: &UsersStore{rdb: redis},
 	}
 }

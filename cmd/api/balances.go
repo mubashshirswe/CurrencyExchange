@@ -6,27 +6,17 @@ import (
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 )
 
-type CreateBalancePayload struct {
-	ID         int64 `json:"id"`
-	Balance    int64 `json:"balance"`
-	UserId     int64 `json:"user_id"`
-	InOutLay   int64 `json:"in_out_lay"`
-	CurrencyId int64 `json:"currency_id"`
-	OutInLay   int64 `json:"out_in_lay"`
-	CompanyId  int64 `json:"company_id"`
-}
-
-type UpdateBalancePayload struct {
-	ID         int64 `json:"id"`
-	Balance    int64 `json:"balance"`
-	UserId     int64 `json:"user_id"`
-	InOutLay   int64 `json:"in_out_lay"`
-	OutInLay   int64 `json:"out_in_lay"`
-	CurrencyId int64 `json:"currency_id"`
+type BalancePayload struct {
+	Balance   int64  `json:"balance"`
+	UserId    int64  `json:"user_id"`
+	InOutLay  int64  `json:"in_out_lay"`
+	Currency  string `json:"currency"`
+	OutInLay  int64  `json:"out_in_lay"`
+	CompanyId int64  `json:"company_id"`
 }
 
 func (app *application) CreateBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	var payload CreateBalancePayload
+	var payload BalancePayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -38,12 +28,12 @@ func (app *application) CreateBalanceHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	balance := &store.Balance{
-		Balance:    payload.Balance,
-		UserId:     payload.UserId,
-		InOutLay:   payload.InOutLay,
-		OutInLay:   payload.OutInLay,
-		CurrencyId: payload.CurrencyId,
-		CompanyId:  payload.CompanyId,
+		Balance:   payload.Balance,
+		UserId:    payload.UserId,
+		InOutLay:  payload.InOutLay,
+		OutInLay:  payload.OutInLay,
+		Currency:  payload.Currency,
+		CompanyId: payload.CompanyId,
 	}
 
 	if err := app.store.Balances.Create(r.Context(), balance); err != nil {
@@ -99,7 +89,7 @@ func (app *application) GetAllBalanceHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) UpdateBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	var payload UpdateBalancePayload
+	var payload BalancePayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return

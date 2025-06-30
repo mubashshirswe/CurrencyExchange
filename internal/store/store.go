@@ -23,18 +23,10 @@ type Storage struct {
 		Delete(context.Context, *int64) error
 	}
 
-	Employees interface {
-		Login(context.Context, *Employee) error
-		Create(context.Context, *Employee) error
-		Update(context.Context, *Employee) error
-		GetAll(context.Context) ([]Employee, error)
-		GetById(context.Context, *int64) (*Employee, error)
-		Delete(context.Context, *int64) error
-	}
-
 	Balances interface {
 		Create(context.Context, *Balance) error
 		GetById(context.Context, *int64) (*Balance, error)
+		GetByIdAndCurrency(context.Context, *int64, string) (*Balance, error)
 		GetByUserId(context.Context, *int64) ([]Balance, error)
 		GetAll(context.Context) ([]Balance, error)
 		Update(context.Context, *Balance) error
@@ -43,9 +35,8 @@ type Storage struct {
 
 	BalanceRecords interface {
 		Create(context.Context, *BalanceRecord) error
-		GetByBalanceId(context.Context, int64) ([]BalanceRecord, error)
-		GetByUserId(context.Context, int64) ([]BalanceRecord, error)
-		GetBySerialNo(context.Context, string) (*BalanceRecord, error)
+		GetByField(context.Context, string, any) ([]BalanceRecord, error)
+		GetByFieldAndDate(context.Context, string, string, string, any) ([]BalanceRecord, error)
 		Update(context.Context, *BalanceRecord) error
 		Delete(context.Context, int64) error
 	}
@@ -54,26 +45,8 @@ type Storage struct {
 		Create(context.Context, *Transaction) error
 		Update(context.Context, *Transaction) error
 		Delete(context.Context, *int64) error
-		GetById(context.Context, *int64) (*Transaction, error)
-		GetByField(context.Context, string, string) (*Transaction, error)
-		GetAllByStatus(context.Context, int64) ([]Transaction, error)
-		GetAllByBalanceId(context.Context, *int64) ([]Transaction, error)
-		GetAllByReceiverId(context.Context, *int64) ([]Transaction, error)
-		GetAllByUserId(context.Context, *int64) ([]Transaction, error)
-		GetAllByDate(context.Context, string, string, *int64) ([]Transaction, error)
-	}
-
-	Currencies interface {
-		Create(context.Context, *Currency) error
-		GetAll(context.Context) ([]Currency, error)
-		Update(context.Context, *Currency) error
-		Delete(context.Context, *int64) error
-	}
-	Cities interface {
-		Create(context.Context, *City) error
-		GetAll(context.Context) ([]City, error)
-		Update(context.Context, *City) error
-		Delete(context.Context, *int64) error
+		GetByField(context.Context, string, any) ([]Transaction, error)
+		GetByFieldAndDate(context.Context, string, string, string, any) ([]Transaction, error)
 	}
 
 	Companies interface {
@@ -90,11 +63,8 @@ func NewStorage(db *sql.DB) Storage {
 		Debtors:        &DebtorsStorage{db: db},
 		Users:          &UserStorage{db: db},
 		Transactions:   &TransactionStorage{db: db},
-		Currencies:     &CurrencyStorage{db: db},
-		Cities:         &CityStorage{db: db},
 		Balances:       &BalanceStorage{db: db},
 		Companies:      &CompanyStorage{db: db},
-		Employees:      &EmployeeStorage{db: db},
 		BalanceRecords: &BalanceRecordStorage{db: db},
 	}
 }

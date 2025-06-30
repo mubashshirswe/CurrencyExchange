@@ -8,16 +8,14 @@ import (
 )
 
 type Balance struct {
-	ID           int64  `json:"id"`
-	Balance      int64  `json:"balance"`
-	UserId       int64  `json:"user_id"`
-	InOutLay     int64  `json:"in_out_lay"`
-	OutInLay     int64  `json:"out_in_lay"`
-	CompanyId    int64  `json:"company_id"`
-	CurrencyId   int64  `json:"currency_id"`
-	CurrencyType string `json:"currency_type"`
-	CreatedAt    string `json:"created_at"`
-	UpdatedAt    string `json:"updated_at"`
+	ID        int64  `json:"id"`
+	Balance   int64  `json:"balance"`
+	UserId    int64  `json:"user_id"`
+	InOutLay  int64  `json:"in_out_lay"`
+	OutInLay  int64  `json:"out_in_lay"`
+	CompanyId int64  `json:"company_id"`
+	Currency  string `json:"currency"`
+	CreatedAt string `json:"created_at"`
 }
 
 type BalanceStorage struct {
@@ -25,8 +23,8 @@ type BalanceStorage struct {
 }
 
 func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
-	query := `SELECT * FROM balances WHERE user_id = $1 and currency_id = $2`
-	rows, err := s.db.ExecContext(ctx, query, balance.UserId, balance.CurrencyId)
+	query := `SELECT * FROM balances WHERE user_id = $1 and currency = $2`
+	rows, err := s.db.ExecContext(ctx, query, balance.UserId, balance.Currency)
 	if err != nil {
 		return err
 	}
@@ -36,10 +34,10 @@ func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
 		return err
 	}
 	if res != 0 {
-		return fmt.Errorf("ALREADY EXIST WITH CURRENCY %v", balance.CurrencyId)
+		return fmt.Errorf("ALREADY EXIST WITH CURRENCY %v", balance.Currency)
 	}
 
-	query = `INSERT INTO balances(balance, user_id, in_out_lay, out_in_lay, company_id, currency_id)
+	query = `INSERT INTO balances(balance, user_id, in_out_lay, out_in_lay, company_id, currency)
 				VALUES($1, $2, $3, $4, $5, $6) RETURNING id, created_at`
 
 	err = s.db.QueryRowContext(
@@ -50,7 +48,7 @@ func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
 		balance.InOutLay,
 		balance.OutInLay,
 		balance.CompanyId,
-		balance.CurrencyId).Scan(
+		balance.Currency).Scan(
 		&balance.ID,
 		&balance.CreatedAt,
 	)
@@ -63,8 +61,7 @@ func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {
 }
 
 func (s *BalanceStorage) GetAll(ctx context.Context) ([]Balance, error) {
-	query := `SELECT b.id, b.balance, b.user_id, b.in_out_lay, b.out_in_lay, b.company_id, b.created_at, b.updated_at, b.currency_id , c.name
-		 FROM balances b join currencies c on b.currency_id = c.id`
+	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at FROM balances`
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err
@@ -81,10 +78,8 @@ func (s *BalanceStorage) GetAll(ctx context.Context) ([]Balance, error) {
 			&balance.InOutLay,
 			&balance.OutInLay,
 			&balance.CompanyId,
+			&balance.Currency,
 			&balance.CreatedAt,
-			&balance.UpdatedAt,
-			&balance.CurrencyId,
-			&balance.CurrencyType,
 		)
 		if err != nil {
 			return nil, err
@@ -96,9 +91,31 @@ func (s *BalanceStorage) GetAll(ctx context.Context) ([]Balance, error) {
 	return balances, nil
 }
 
+func (s *BalanceStorage) GetByIdAndCurrency(ctx context.Context, userID *int64, currency string) (*Balance, error) {
+	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at  FROM balances WHERE user_id = $1 AND currency = $2`
+	balance := &Balance{}
+
+	err := s.db.QueryRowContext(ctx, query, userID, currency).Scan(
+		&balance.ID,
+		&balance.Balance,
+		&balance.UserId,
+		&balance.InOutLay,
+		&balance.OutInLay,
+		&balance.CompanyId,
+		&balance.Currency,
+		&balance.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return balance, nil
+}
+
 func (s *BalanceStorage) GetByUserId(ctx context.Context, userId *int64) ([]Balance, error) {
-	query := `SELECT b.id, b.balance, b.user_id, b.in_out_lay, b.out_in_lay, b.company_id, b.created_at, b.updated_at, b.currency_id , c.name
-		 FROM balances b join currencies c on b.currency_id = c.id WHERE b.user_id = $1`
+	query := `
+				SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at 
+				FROM balances WHERE user_id = $1`
 	rows, err := s.db.QueryContext(ctx, query, userId)
 	if err != nil {
 		return nil, err
@@ -115,10 +132,8 @@ func (s *BalanceStorage) GetByUserId(ctx context.Context, userId *int64) ([]Bala
 			&balance.InOutLay,
 			&balance.OutInLay,
 			&balance.CompanyId,
+			&balance.Currency,
 			&balance.CreatedAt,
-			&balance.UpdatedAt,
-			&balance.CurrencyId,
-			&balance.CurrencyType,
 		)
 		if err != nil {
 			return nil, err
@@ -131,8 +146,7 @@ func (s *BalanceStorage) GetByUserId(ctx context.Context, userId *int64) ([]Bala
 }
 
 func (s *BalanceStorage) GetById(ctx context.Context, id *int64) (*Balance, error) {
-	query := `SELECT b.id, b.balance, b.user_id, b.in_out_lay, b.out_in_lay, b.company_id, b.created_at, b.updated_at, b.currency_id , c.name
-		 FROM balances b join currencies c on b.currency_id = c.id WHERE b.id = $1`
+	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at  FROM balances WHERE id = $1`
 	balance := &Balance{}
 
 	err := s.db.QueryRowContext(ctx, query, id).Scan(
@@ -142,10 +156,8 @@ func (s *BalanceStorage) GetById(ctx context.Context, id *int64) (*Balance, erro
 		&balance.InOutLay,
 		&balance.OutInLay,
 		&balance.CompanyId,
+		&balance.Currency,
 		&balance.CreatedAt,
-		&balance.UpdatedAt,
-		&balance.CurrencyId,
-		&balance.CurrencyType,
 	)
 	if err != nil {
 		return nil, err

@@ -4,62 +4,50 @@ import (
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
-type CreateBalanceRecordPayload struct {
-	Amount     int64  `json:"amount"`
-	UserID     int64  `json:"user_id"`
-	BalanceID  int64  `json:"balance_id"`
-	CompanyID  int64  `json:"company_id"`
-	Details    string `json:"details"`
-	CurrenctID int64  `json:"currency_id"`
-	Type       int64  `json:"type"`
-}
+/*
+   ReceivedMoney + currency
+   SelledMondey  + currency
+   UserID
+   CompanyID
+   Details
+*/
 
-type UpdateBalanceRecordPayload struct {
-	Amount     int64  `json:"amount"`
-	Details    string `json:"details"`
-	CurrenctID int64  `json:"currency_id"`
-	Type       int64  `json:"type"`
+type FieldRequestPayload struct {
+	From       *string `json:"from"`
+	To         *string `json:"to"`
+	FieldName  string  `json:"field_name"`
+	FieldValue any     `json:"field_value"`
 }
 
 func (app *application) CreateBalanceRecordHandler(w http.ResponseWriter, r *http.Request) {
-	var payload CreateBalanceRecordPayload
+	var payload types.BalanceRecordPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	if err := Validate.Struct(payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	balanceRecord := &store.BalanceRecord{
-		Amount:     payload.Amount,
-		UserID:     payload.UserID,
-		BalanceID:  payload.BalanceID,
-		CompanyID:  payload.CompanyID,
-		Details:    payload.Details,
-		CurrenctID: payload.CurrenctID,
-		Type:       payload.Type,
-	}
-
-	if err := app.service.BalanceRecords.PerformBalanceRecord(r.Context(), balanceRecord); err != nil {
+	if err := app.service.BalanceRecords.PerformBalanceRecord(r.Context(), payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, balanceRecord); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 }
 
 func (app *application) GetBalanceRecordsByUserIdHandler(w http.ResponseWriter, r *http.Request) {
-	userID := getIDFromContext(r)
+	var payload FieldRequestPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	records, err := app.store.BalanceRecords.GetByUserId(r.Context(), userID)
+	records, err := app.store.BalanceRecords.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -72,9 +60,13 @@ func (app *application) GetBalanceRecordsByUserIdHandler(w http.ResponseWriter, 
 }
 
 func (app *application) GetBalanceRecordsByBalanceIdHandler(w http.ResponseWriter, r *http.Request) {
-	balanceID := getIDFromContext(r)
+	var payload FieldRequestPayload
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	records, err := app.store.BalanceRecords.GetByBalanceId(r.Context(), balanceID)
+	records, err := app.store.BalanceRecords.GetByFieldAndDate(r.Context(), payload.FieldName, *payload.From, *payload.To, payload.FieldValue)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -87,30 +79,18 @@ func (app *application) GetBalanceRecordsByBalanceIdHandler(w http.ResponseWrite
 }
 
 func (app *application) UpdateBalanceRecordHandler(w http.ResponseWriter, r *http.Request) {
-	var payload UpdateBalanceRecordPayload
+	var payload store.BalanceRecord
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	if err := Validate.Struct(payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	balanceRecord := &store.BalanceRecord{
-		Amount:     payload.Amount,
-		Details:    payload.Details,
-		CurrenctID: payload.CurrenctID,
-		Type:       payload.Type,
-	}
-
-	if err := app.store.BalanceRecords.Update(r.Context(), balanceRecord); err != nil {
+	if err := app.service.BalanceRecords.UpdateRecord(r.Context(), payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, balanceRecord); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -119,7 +99,7 @@ func (app *application) UpdateBalanceRecordHandler(w http.ResponseWriter, r *htt
 func (app *application) DeleteBalanceRecordHandler(w http.ResponseWriter, r *http.Request) {
 	id := getIDFromContext(r)
 
-	if err := app.store.BalanceRecords.Delete(r.Context(), id); err != nil {
+	if err := app.service.BalanceRecords.RollbackBalanceRecord(r.Context(), id); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
