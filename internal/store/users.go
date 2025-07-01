@@ -23,7 +23,7 @@ type UserStorage struct {
 
 func (s *UserStorage) Create(ctx context.Context, user *User) error {
 	query := `INSERT INTO users(username, phone, password, role, company_id)
-				VALUES($1, $2, $3, $4) RETURNING id, created_at`
+				VALUES($1, $2, $3, $4, $5) RETURNING id, created_at`
 
 	err := s.db.QueryRowContext(
 		ctx,

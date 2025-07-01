@@ -12,10 +12,14 @@ type DebtorsService struct {
 }
 
 func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) error {
+	// tx,err := s.store.B
+
 	balance, err := s.store.Balances.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
 	if err != nil {
 		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByIdAndCurrency")
 	}
+
+	debtor.CompanyID = balance.CompanyId
 
 	switch debtor.Type {
 	case TYPE_SELL:
@@ -48,6 +52,10 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		return err
 	}
 
+	if err := s.store.Balances.Update(ctx, balance); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -65,6 +73,8 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 	if err != nil {
 		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByIdAndCurrency %v", err)
 	}
+
+	debtor.CompanyID = balance.CompanyId
 
 	switch debtor.Type {
 	case TYPE_SELL:
@@ -101,6 +111,10 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
 	}
 
+	if err := s.store.Balances.Update(ctx, balance); err != nil {
+		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
+	}
+
 	return nil
 }
 
@@ -119,6 +133,8 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 	if err != nil {
 		return err
 	}
+
+	debtor.CompanyID = balance.CompanyId
 
 	switch oldRecord.Type {
 	case TYPE_SELL:
@@ -199,6 +215,7 @@ func (s *DebtorsService) Delete(ctx context.Context, balanceRecordId int64) erro
 }
 
 func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64) (map[string]interface{}, error) {
+	s.store.Debtors.GetByUserId(ctx, companyId)
 
 	return nil, nil
 }

@@ -11,6 +11,7 @@ type Storage struct {
 		Update(context.Context, *Debtors) error
 		GetById(context.Context, int64) (*Debtors, error)
 		GetByUserId(context.Context, int64) ([]Debtors, error)
+		GetByCompanyId(context.Context, int64) ([]Debtors, error)
 		Delete(context.Context, int64) error
 	}
 
@@ -67,4 +68,25 @@ func NewStorage(db *sql.DB) Storage {
 		Companies:      &CompanyStorage{db: db},
 		BalanceRecords: &BalanceRecordStorage{db: db},
 	}
+}
+
+type TxWrapper struct {
+	tx *sql.Tx
+}
+
+func (t *TxWrapper) Commit() error {
+	return t.tx.Commit()
+}
+
+func (t *TxWrapper) Rollback() error {
+	return t.tx.Rollback()
+}
+
+func (t *TxWrapper) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	return t.tx.QueryContext(ctx, query, args...)
+}
+
+func (t *TxWrapper) ExecContext(ctx context.Context, query string, args ...any) (*sql.Result, error) {
+	result, err := t.tx.ExecContext(ctx, query, args...)
+	return &result, err
 }

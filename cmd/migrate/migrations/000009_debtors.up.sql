@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS debtors (
     debted_amount bigint,
     debted_currency  varchar(255),
     user_id bigint,
+    company_id bigint,
     details varchar(255) DEFAULT NULL,
     phone varchar(9) DEFAULT NULL,
     is_balance_effect int DEFAULT 0,
@@ -14,3 +15,4 @@ CREATE TABLE IF NOT EXISTS debtors (
 );
 
 ALTER TABLE debtors ADD CONSTRAINT fk_debtors_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE debtors ADD CONSTRAINT fk_debtors_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;

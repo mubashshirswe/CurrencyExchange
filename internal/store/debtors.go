@@ -13,6 +13,7 @@ type Debtors struct {
 	DebtedAmount     int64   `json:"debted_amount"`
 	DebtedCurrency   string  `json:"debted_currency"`
 	UserID           int64   `json:"user_id"`
+	CompanyID        int64   `json:"company_id"`
 	Details          *string `json:"details"`
 	Phone            *string `json:"phone"`
 	IsBalanceEffect  int     `json:"is_balance_effect"`
@@ -40,8 +41,8 @@ type DebtorsStorage struct {
 func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	query := `
 				INSERT INTO debtors (received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status)
-				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at
+				details, phone, is_balance_effect, type, status, company_id)
+				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at
 			`
 
 	err := s.db.QueryRowContext(
@@ -57,6 +58,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 		credits.IsBalanceEffect,
 		credits.Type,
 		credits.Status,
+		credits.CompanyID,
 	).Scan(
 		&credits.ID,
 		&credits.CreatedAt,
@@ -69,10 +71,58 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	return nil
 }
 
+func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]Debtors, error) {
+	query := `
+				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
+				details, phone, is_balance_effect, type, status, created_at, company_id
+				FROM debtors WHERE company_id = $1 and status != -1
+			`
+
+	var credits []Debtors
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		companyId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var credit Debtors
+		err := rows.Scan(
+			&credit.ID,
+			&credit.ReceivedAmount,
+			&credit.ReceivedCurrency,
+			&credit.DebtedAmount,
+			&credit.DebtedCurrency,
+			&credit.UserID,
+			&credit.Details,
+			&credit.Phone,
+			&credit.IsBalanceEffect,
+			&credit.Type,
+			&credit.Status,
+			&credit.CreatedAt,
+			&credit.CompanyID,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		credits = append(credits, credit)
+
+	}
+
+	return credits, nil
+}
+
 func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debtors, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status, created_at
+				details, phone, is_balance_effect, type, status, created_at, company_id
 				FROM debtors WHERE user_id = $1 and status != -1
 			`
 
@@ -103,6 +153,7 @@ func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debto
 			&credit.Type,
 			&credit.Status,
 			&credit.CreatedAt,
+			&credit.CompanyID,
 		)
 
 		if err != nil {
@@ -119,7 +170,7 @@ func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debto
 func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status, created_at
+				details, phone, is_balance_effect, type, status, created_at, company_id
 				FROM debtors WHERE id = $1 and status != -1
 			`
 
@@ -143,6 +194,7 @@ func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error
 		&credit.Type,
 		&credit.Status,
 		&credit.CreatedAt,
+		&credit.CompanyID,
 	)
 
 	if err != nil {
@@ -155,22 +207,23 @@ func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error
 func (s *DebtorsStorage) Update(ctx context.Context, credit *Debtors) error {
 	query := `
 				UPDATE debtors SET received_amount = $1, received_currency = $2, debted_amount = $3, debted_currency = $4, 
-				user_id = $5, details = $6, phone = $7, is_balance_effect = $8, type = $9, status = $10 WHERE id = $11 and status = -1
+				user_id = $5, details = $6, phone = $7, is_balance_effect = $8, type = $9, status = $10, company_id = $11 WHERE id = $12 and status != -1
 			`
 
 	rows, err := s.db.ExecContext(
 		ctx,
 		query,
-		&credit.ReceivedAmount,
-		&credit.ReceivedCurrency,
-		&credit.DebtedAmount,
-		&credit.DebtedCurrency,
-		&credit.UserID,
-		&credit.Details,
-		&credit.Phone,
-		&credit.IsBalanceEffect,
-		&credit.Type,
-		&credit.Status,
+		credit.ReceivedAmount,
+		credit.ReceivedCurrency,
+		credit.DebtedAmount,
+		credit.DebtedCurrency,
+		credit.UserID,
+		credit.Details,
+		credit.Phone,
+		credit.IsBalanceEffect,
+		credit.Type,
+		credit.Status,
+		credit.CompanyID,
 		credit.ID,
 	)
 

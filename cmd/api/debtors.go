@@ -16,7 +16,6 @@ type DebtorPayload struct {
 	Phone            *string `json:"phone"`
 	IsBalanceEffect  int     `json:"is_balance_effect"`
 	Type             int     `json:"type"`
-	Status           int     `json:"status"`
 }
 
 func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +49,24 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 	}
 }
 
+func (app *application) CreateDebtorTransactionHandler(w http.ResponseWriter, r *http.Request) {
+	var payload *store.Debtors
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := app.service.Debtors.Transaction(r.Context(), payload); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, payload); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
 	var payload *store.BalanceRecord
 	if err := readJSON(w, r, &payload); err != nil {
@@ -69,7 +86,7 @@ func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
-	debtors, err := app.service.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r))
+	debtors, err := app.store.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

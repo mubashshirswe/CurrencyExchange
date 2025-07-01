@@ -8,11 +8,12 @@ import (
 )
 
 type UserPayload struct {
-	Username string  `json:"username"`
-	Phone    string  `json:"phone"`
-	Role     int64   `json:"role"`
-	Password string  `json:"password"`
-	Avatar   *string `json:"avatar"`
+	Username  string  `json:"username"`
+	Phone     string  `json:"phone"`
+	Role      int64   `json:"role"`
+	Password  string  `json:"password"`
+	CompanyId int64   `json:"company_id"`
+	Avatar    *string `json:"avatar"`
 }
 
 type LoginUserPayload struct {
@@ -33,10 +34,11 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	user := &store.User{
-		Username: payload.Username,
-		Phone:    payload.Phone,
-		Role:     payload.Role,
-		Password: payload.Password,
+		Username:  payload.Username,
+		Phone:     payload.Phone,
+		Role:      payload.Role,
+		Password:  payload.Password,
+		CompanyId: payload.CompanyId,
 	}
 
 	if err := app.store.Users.Create(r.Context(), user); err != nil {

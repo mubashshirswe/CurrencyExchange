@@ -10,3 +10,9 @@ type BalanceRecordPayload struct {
 	CompanyID        int64  `json:"company_id"`
 	Details          string `json:"details"`
 }
+
+type TransactionComplete struct {
+	TransactionID      int64 `json:"transactionID"`
+	DeliveredUserId    int64 `json:"delivered_user_id"`
+	RecievedServiceFee int64 `json:"received_service_fee"`
+}

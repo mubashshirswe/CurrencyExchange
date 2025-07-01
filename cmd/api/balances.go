@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
@@ -27,13 +28,15 @@ func (app *application) CreateBalanceHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	user, _ := app.store.Users.GetById(context.Background(), &payload.UserId)
+
 	balance := &store.Balance{
 		Balance:   payload.Balance,
 		UserId:    payload.UserId,
 		InOutLay:  payload.InOutLay,
 		OutInLay:  payload.OutInLay,
 		Currency:  payload.Currency,
-		CompanyId: payload.CompanyId,
+		CompanyId: user.CompanyId,
 	}
 
 	if err := app.store.Balances.Create(r.Context(), balance); err != nil {

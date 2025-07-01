@@ -3,8 +3,8 @@ package main
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type TransactionPayload struct {
@@ -99,14 +99,18 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 }
 
 func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
-	serialNo := chi.URLParam(r, "serial_no")
+	var payload types.TransactionComplete
+	if err := readJSON(w, r, &payload); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
 
-	if err := app.service.Transactions.CompleteTransaction(r.Context(), serialNo); err != nil {
+	if err := app.service.Transactions.CompleteTransaction(r.Context(), payload); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, serialNo); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, "SUCCESS"); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

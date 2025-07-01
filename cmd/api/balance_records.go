@@ -7,14 +7,6 @@ import (
 	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
-/*
-   ReceivedMoney + currency
-   SelledMondey  + currency
-   UserID
-   CompanyID
-   Details
-*/
-
 type FieldRequestPayload struct {
 	From       *string `json:"from"`
 	To         *string `json:"to"`

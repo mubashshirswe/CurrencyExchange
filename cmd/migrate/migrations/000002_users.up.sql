@@ -8,3 +8,5 @@ create table if not exists users(
     company_id bigint default null,
     created_at timestamp(0) with time zone not null default now()
 )
+
+ALTER TABLE transactions ADD CONSTRAINT fk_transactions_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;

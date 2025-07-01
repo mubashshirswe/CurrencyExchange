@@ -54,6 +54,8 @@ func (app *application) mount() *chi.Mux {
 
 	r.Route("/api/v1", func(r chi.Router) {
 
+		r.Post("/company", app.CreateCompanyHandler)
+
 		r.Post("/users/register", app.CreateUserHandler)
 		r.Post("/users/login", app.LoginUserHandler)
 
@@ -85,7 +87,8 @@ func (app *application) mount() *chi.Mux {
 			})
 
 			r.Route("/debtors", func(r chi.Router) {
-				r.Post("/", app.CreateDebtorsHandler)
+				r.Post("/create", app.CreateDebtorsHandler)
+				r.Post("/transaction", app.CreateDebtorTransactionHandler)
 				r.Get("/company/{id}", app.GetDebtorsByCompanyIdHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", app.GetDebtorsByIdHandler)
