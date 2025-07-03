@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 )
 
@@ -18,7 +17,11 @@ type User struct {
 }
 
 type UserStorage struct {
-	db *sql.DB
+	db DBTX
+}
+
+func NewUserStorage(db DBTX) *UserStorage {
+	return &UserStorage{db: db}
 }
 
 func (s *UserStorage) Create(ctx context.Context, user *User) error {

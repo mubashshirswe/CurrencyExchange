@@ -28,7 +28,11 @@ type Transaction struct {
 }
 
 type TransactionStorage struct {
-	db *sql.DB
+	db DBTX
+}
+
+func NewTransactionStorage(db DBTX) *TransactionStorage {
+	return &TransactionStorage{db: db}
 }
 
 func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error {

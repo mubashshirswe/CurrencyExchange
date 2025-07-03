@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 )
 
@@ -15,7 +14,11 @@ type Company struct {
 }
 
 type CompanyStorage struct {
-	db *sql.DB
+	db DBTX
+}
+
+func NewCompanyStorage(db DBTX) *CompanyStorage {
+	return &CompanyStorage{db: db}
 }
 
 func (s *CompanyStorage) Create(ctx context.Context, company *Company) error {

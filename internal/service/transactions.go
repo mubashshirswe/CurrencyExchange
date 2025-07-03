@@ -20,8 +20,18 @@ type TransactionService struct {
 }
 
 func (s *TransactionService) PerformTransaction(ctx context.Context, transaction *store.Transaction) error {
-	balance, err := s.store.Balances.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	transactionsStorage := store.NewTransactionStorage(tx)
+
+	balance, err := balancesStorage.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -31,16 +41,19 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 			balance.Balance -= transaction.ReceivedAmount
 			balance.InOutLay += transaction.ReceivedAmount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THIS %v", err)
 		}
 	case TYPE_BUY:
 		balance.Balance += transaction.ReceivedAmount
 		balance.OutInLay += transaction.ReceivedAmount
 	default:
+		tx.Rollback()
 		return fmt.Errorf("FOUND UNKNOWN TYPE")
 	}
 
-	if err := s.store.Transactions.Create(ctx, transaction); err != nil {
+	if err := transactionsStorage.Create(ctx, transaction); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Transactions.Create %v", err)
 	}
 
@@ -54,22 +67,35 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		TransactionId: &transaction.ID,
 	}
 
-	if err := s.store.BalanceRecords.Create(ctx, balanceRecord); err != nil {
+	if err := balanceRecordsStorage.Create(ctx, balanceRecord); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
 	}
 
+	tx.Commit()
 	return nil
 }
 
 func (s *TransactionService) CompleteTransaction(ctx context.Context, transaction types.TransactionComplete) error {
-	transactions, err := s.store.Transactions.GetByField(ctx, "id", transaction.TransactionID)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	transactionsStorage := store.NewTransactionStorage(tx)
+
+	transactions, err := transactionsStorage.GetByField(ctx, "id", transaction.TransactionID)
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	tran := transactions[0]
 
-	balance, err := s.store.Balances.GetByIdAndCurrency(ctx, tran.DeliveredUserId, tran.DeliveredCurrency)
+	balance, err := balancesStorage.GetByIdAndCurrency(ctx, tran.DeliveredUserId, tran.DeliveredCurrency)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -84,6 +110,7 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 			balance.Balance -= tran.DeliveredAmount
 			balance.InOutLay += tran.ReceivedAmount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THIS ACTION")
 		}
 	}
@@ -97,26 +124,40 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 		Type:          recordType,
 	}
 
-	if err := s.store.BalanceRecords.Create(context.Background(), balanceRecord); err != nil {
+	if err := balanceRecordsStorage.Create(context.Background(), balanceRecord); err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	if err := s.store.Balances.Create(context.Background(), balance); err != nil {
+	if err := balancesStorage.Create(context.Background(), balance); err != nil {
+		tx.Rollback()
 		return err
 	}
 
+	tx.Commit()
 	return nil
 }
 
 func (s *TransactionService) Update(ctx context.Context, transaction *store.Transaction) error {
-	records, err := s.store.BalanceRecords.GetByField(ctx, "transaction_id", transaction.ID)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
 		return err
 	}
 
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	transactionsStorage := store.NewTransactionStorage(tx)
+
+	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", transaction.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	for _, record := range records {
-		balance, err := s.store.Balances.GetById(ctx, &record.BalanceID)
+		balance, err := balancesStorage.GetById(ctx, &record.BalanceID)
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
 
@@ -128,22 +169,26 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				balance.Balance -= record.Amount
 				balance.OutInLay -= record.Amount
 			} else {
+				tx.Rollback()
 				return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY")
 			}
 		}
 
-		if err := s.store.BalanceRecords.Delete(ctx, record.ID); err != nil {
+		if err := balanceRecordsStorage.Delete(ctx, record.ID); err != nil {
+			tx.Rollback()
 			return err
 		}
 
-		if err := s.store.Balances.Update(ctx, balance); err != nil {
+		if err := balancesStorage.Update(ctx, balance); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
 	if transaction.ReceivedUserId != 0 {
-		balance, err := s.store.Balances.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
+		balance, err := balancesStorage.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
 
@@ -158,18 +203,21 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 			Type:          transaction.Type,
 		}
 
-		if err := s.store.Balances.Update(ctx, balance); err != nil {
+		if err := balancesStorage.Update(ctx, balance); err != nil {
+			tx.Rollback()
 			return err
 		}
 
-		if err := s.store.BalanceRecords.Update(ctx, record); err != nil {
+		if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
 	if transaction.DeliveredUserId != nil {
-		balance, err := s.store.Balances.GetByIdAndCurrency(ctx, transaction.DeliveredUserId, transaction.DeliveredCurrency)
+		balance, err := balancesStorage.GetByIdAndCurrency(ctx, transaction.DeliveredUserId, transaction.DeliveredCurrency)
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
 
@@ -184,37 +232,53 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 			Type:          transaction.Type,
 		}
 
-		if err := s.store.Balances.Update(ctx, balance); err != nil {
+		if err := balancesStorage.Update(ctx, balance); err != nil {
+			tx.Rollback()
 			return err
 		}
 
-		if err := s.store.BalanceRecords.Update(ctx, record); err != nil {
+		if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := s.store.Transactions.Update(ctx, transaction); err != nil {
+	if err := transactionsStorage.Update(ctx, transaction); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING TRANSACTION %v", err)
 	}
 
+	tx.Commit()
 	return nil
 }
 
 func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
-	trans, err := s.store.Transactions.GetByField(ctx, "id", id)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	transactionsStorage := store.NewTransactionStorage(tx)
+
+	trans, err := transactionsStorage.GetByField(ctx, "id", id)
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	tran := trans[0]
 
-	records, err := s.store.BalanceRecords.GetByField(ctx, "transaction_id", tran.ID)
+	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", tran.ID)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
 	for _, record := range records {
-		balance, err := s.store.Balances.GetById(ctx, &record.BalanceID)
+		balance, err := balancesStorage.GetById(ctx, &record.BalanceID)
 		if err != nil {
+			tx.Rollback()
 			return err
 		}
 
@@ -226,20 +290,25 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 				balance.Balance -= record.Amount
 				balance.OutInLay -= record.Amount
 			} else {
+				tx.Rollback()
 				return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THE ACTION")
 			}
 		}
-		if err := s.store.Balances.Create(ctx, balance); err != nil {
+		if err := balancesStorage.Create(ctx, balance); err != nil {
+			tx.Rollback()
 			return err
 		}
-		if err := s.store.BalanceRecords.Delete(ctx, record.ID); err != nil {
+		if err := balanceRecordsStorage.Delete(ctx, record.ID); err != nil {
+			tx.Rollback()
 			return err
 		}
 	}
 
-	if err := s.store.Transactions.Delete(ctx, &tran.ID); err != nil {
+	if err := transactionsStorage.Delete(ctx, &tran.ID); err != nil {
+		tx.Rollback()
 		return err
 	}
 
+	tx.Commit()
 	return nil
 }

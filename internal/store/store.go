@@ -5,7 +5,17 @@ import (
 	"database/sql"
 )
 
+type DBTX interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+	Commit() error
+	Rollback() error
+}
+
 type Storage struct {
+	DB *sql.DB
+
 	Debtors interface {
 		Create(context.Context, *Debtors) error
 		Update(context.Context, *Debtors) error
@@ -60,33 +70,23 @@ type Storage struct {
 }
 
 func NewStorage(db *sql.DB) Storage {
+	dbwrapper := &DBWrapper{db: db}
+
 	return Storage{
-		Debtors:        &DebtorsStorage{db: db},
-		Users:          &UserStorage{db: db},
-		Transactions:   &TransactionStorage{db: db},
-		Balances:       &BalanceStorage{db: db},
-		Companies:      &CompanyStorage{db: db},
-		BalanceRecords: &BalanceRecordStorage{db: db},
+		DB:             db,
+		Debtors:        &DebtorsStorage{db: dbwrapper},
+		Users:          &UserStorage{db: dbwrapper},
+		Transactions:   &TransactionStorage{db: dbwrapper},
+		Balances:       &BalanceStorage{db: dbwrapper},
+		Companies:      &CompanyStorage{db: dbwrapper},
+		BalanceRecords: &BalanceRecordStorage{db: dbwrapper},
 	}
 }
 
-type TxWrapper struct {
-	tx *sql.Tx
-}
-
-func (t *TxWrapper) Commit() error {
-	return t.tx.Commit()
-}
-
-func (t *TxWrapper) Rollback() error {
-	return t.tx.Rollback()
-}
-
-func (t *TxWrapper) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
-	return t.tx.QueryContext(ctx, query, args...)
-}
-
-func (t *TxWrapper) ExecContext(ctx context.Context, query string, args ...any) (*sql.Result, error) {
-	result, err := t.tx.ExecContext(ctx, query, args...)
-	return &result, err
+func (s *Storage) BeginTx(ctx context.Context) (DBTX, error) {
+	tx, err := s.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &TxWrapper{tx: tx}, nil
 }

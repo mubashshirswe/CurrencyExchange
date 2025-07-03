@@ -21,7 +21,11 @@ type BalanceRecord struct {
 }
 
 type BalanceRecordStorage struct {
-	db *sql.DB
+	db DBTX
+}
+
+func NewBalanceRecordStorage(db DBTX) *BalanceRecordStorage {
+	return &BalanceRecordStorage{db: db}
 }
 
 func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *BalanceRecord) error {

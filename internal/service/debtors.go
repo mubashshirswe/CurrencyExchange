@@ -12,10 +12,18 @@ type DebtorsService struct {
 }
 
 func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) error {
-	// tx,err := s.store.B
-
-	balance, err := s.store.Balances.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	debtorsStorage := store.NewDebtorsStorage(tx)
+
+	balance, err := balancesStorage.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
+	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByIdAndCurrency")
 	}
 
@@ -34,7 +42,8 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		balance.OutInLay += debtor.ReceivedAmount
 	}
 
-	if err := s.store.Debtors.Create(ctx, debtor); err != nil {
+	if err := debtorsStorage.Create(ctx, debtor); err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -48,29 +57,44 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		Currency:  debtor.ReceivedCurrency,
 	}
 
-	if err := s.store.BalanceRecords.Create(ctx, record); err != nil {
+	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ROLLBACK ISHLADI")
+	}
+
+	if err := balancesStorage.Update(ctx, balance); err == nil {
+		tx.Rollback()
 		return err
 	}
 
-	if err := s.store.Balances.Update(ctx, balance); err != nil {
-		return err
-	}
-
+	tx.Commit()
 	return nil
 }
 
 func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors) error {
-	oldDebtor, err := s.store.Debtors.GetById(ctx, debtor.ID)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
 		return err
 	}
 
+	debtorsStorage := store.NewDebtorsStorage(tx)
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+
+	oldDebtor, err := debtorsStorage.GetById(ctx, debtor.ID)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	if oldDebtor.DebtedCurrency != debtor.DebtedCurrency {
+		tx.Rollback()
 		return fmt.Errorf("DEBTED CURRENCIES ARE NOT MATCH %v", err)
 	}
 
-	balance, err := s.store.Balances.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
+	balance, err := balancesStorage.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByIdAndCurrency %v", err)
 	}
 
@@ -84,6 +108,7 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 
 			oldDebtor.DebtedAmount -= debtor.DebtedAmount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("ERROR OCCURRED: BALANCE HAS NO ENOUGH MONEY TO OPERATE %v >= %v ", balance.Balance, debtor.ReceivedAmount)
 		}
 	case TYPE_BUY:
@@ -103,34 +128,51 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 		Currency:  debtor.ReceivedCurrency,
 	}
 
-	if err := s.store.BalanceRecords.Create(ctx, record); err != nil {
+	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
 	}
 
-	if err := s.store.Debtors.Update(ctx, oldDebtor); err != nil {
+	if err := debtorsStorage.Update(ctx, oldDebtor); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
 	}
 
-	if err := s.store.Balances.Update(ctx, balance); err != nil {
+	if err := balancesStorage.Update(ctx, balance); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
 	}
 
+	tx.Commit()
 	return nil
 }
 
 func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord) error {
-	debtor, err := s.store.Debtors.GetById(ctx, *record.DebtorId)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	debtorsStorage := store.NewDebtorsStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	balanceStorage := store.NewBalanceStorage(tx)
+
+	debtor, err := debtorsStorage.GetById(ctx, *record.DebtorId)
+	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.GetById(ctx, *record.DebtorId) %v", err)
 	}
-	Oldrecords, err := s.store.BalanceRecords.GetByField(ctx, "id", &record.ID)
+
+	Oldrecords, err := balanceRecordsStorage.GetByField(ctx, "id", &record.ID)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	oldRecord := Oldrecords[0]
 
-	balance, err := s.store.Balances.GetById(ctx, &oldRecord.BalanceID)
+	balance, err := balanceStorage.GetById(ctx, &oldRecord.BalanceID)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -150,6 +192,7 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 
 			debtor.DebtedAmount -= oldRecord.Amount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("BALANCE THAT IS ROLLBACKING HAS NO ENOUGH MONEY")
 		}
 	}
@@ -167,30 +210,51 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 		debtor.DebtedAmount -= record.Amount
 	}
 
-	if err := s.store.Balances.Update(ctx, balance); err != nil {
+	if err := balanceStorage.Update(ctx, balance); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING BALANCE %v", err)
 	}
 
-	if err := s.store.BalanceRecords.Update(ctx, record); err != nil {
+	if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	return s.store.Debtors.Update(ctx, debtor)
+	if err := debtorsStorage.Update(ctx, debtor); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+	return nil
 }
 
 func (s *DebtorsService) Delete(ctx context.Context, balanceRecordId int64) error {
-	records, err := s.store.BalanceRecords.GetByField(ctx, "id", balanceRecordId)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	balancesStorage := store.NewBalanceStorage(tx)
+	debtorsStorage := store.NewDebtorsStorage(tx)
+
+	records, err := balanceRecordsStorage.GetByField(ctx, "id", balanceRecordId)
+	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.GetByField %v", err)
 	}
+
 	record := records[0]
-	balance, err := s.store.Balances.GetById(ctx, &record.BalanceID)
+	balance, err := balancesStorage.GetById(ctx, &record.BalanceID)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetById %v", err)
 	}
 
-	debtor, err := s.store.Debtors.GetById(ctx, *record.DebtorId)
+	debtor, err := debtorsStorage.GetById(ctx, *record.DebtorId)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.GetById(ctx, *record.DebtorId) %v", err)
 	}
 
@@ -207,11 +271,19 @@ func (s *DebtorsService) Delete(ctx context.Context, balanceRecordId int64) erro
 
 			debtor.DebtedAmount += record.Amount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE %v >= %v", balance.Balance, record.Amount)
 		}
 	}
 
-	return s.store.BalanceRecords.Delete(ctx, balanceRecordId)
+	if err := balanceRecordsStorage.Delete(ctx, balanceRecordId); err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	tx.Commit()
+
+	return nil
 }
 
 func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64) (map[string]interface{}, error) {

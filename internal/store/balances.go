@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -19,7 +18,11 @@ type Balance struct {
 }
 
 type BalanceStorage struct {
-	db *sql.DB
+	db DBTX
+}
+
+func NewBalanceStorage(db DBTX) *BalanceStorage {
+	return &BalanceStorage{db: db}
 }
 
 func (s *BalanceStorage) Create(ctx context.Context, balance *Balance) error {

@@ -13,36 +13,104 @@ type BalanceRecordService struct {
 }
 
 func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balanceRecord types.BalanceRecordPayload) error {
-	receivedCurrencyBalance, err := s.store.Balances.GetByIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+
+	receivedCurrencyBalance, err := balancesStorage.GetByIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
+	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", balanceRecord.ReceivedCurrency)
 	}
 
-	selledCurrencyBalance, err := s.store.Balances.GetByIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
+	selledCurrencyBalance, err := balancesStorage.GetByIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", balanceRecord.SelledCurrency)
 	}
 
-	if err := s.SelledMoneyPerform(ctx, balanceRecord, selledCurrencyBalance); err != nil {
-		return err
+	/// SELLED MONEY PEFPERFORMROM
+	if selledCurrencyBalance.Balance >= balanceRecord.ReceivedMoney {
+		selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
+		selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
+	} else {
+		tx.Rollback()
+		return fmt.Errorf("SELLED CURRENCY HAVE NO ENOUGH MONEY")
 	}
 
-	if err := s.ReceivedMoneyPerform(ctx, balanceRecord, receivedCurrencyBalance); err != nil {
-		return err
+	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING selledCurrencyBalance %v", err)
 	}
 
+	selledMoneyRecord := &store.BalanceRecord{
+		Amount:    balanceRecord.SelledMoney,
+		Currency:  balanceRecord.SelledCurrency,
+		CompanyID: balanceRecord.CompanyID,
+		BalanceID: selledCurrencyBalance.ID,
+		Details:   &balanceRecord.Details,
+		UserID:    balanceRecord.UserId,
+		Type:      TYPE_SELL,
+	}
+
+	if err := balanceRecordsStorage.Create(ctx, selledMoneyRecord); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+	}
+
+	// RECEIVED MONEY PERFORM
+	if receivedCurrencyBalance != nil {
+		receivedCurrencyBalance.Balance += balanceRecord.ReceivedMoney
+		receivedCurrencyBalance.OutInLay += balanceRecord.ReceivedMoney
+	}
+
+	if err := balancesStorage.Update(ctx, receivedCurrencyBalance); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING receivedCurrencyBalance %v", err)
+	}
+
+	receivedMoneyRecord := &store.BalanceRecord{
+		Amount:    balanceRecord.ReceivedMoney,
+		Currency:  balanceRecord.ReceivedCurrency,
+		CompanyID: balanceRecord.CompanyID,
+		BalanceID: receivedCurrencyBalance.ID,
+		Details:   &balanceRecord.Details,
+		UserID:    balanceRecord.UserId,
+		Type:      TYPE_BUY,
+	}
+
+	if err := balanceRecordsStorage.Create(ctx, receivedMoneyRecord); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+	}
+
+	tx.Commit()
 	return nil
 }
 
 func (s *BalanceRecordService) RollbackBalanceRecord(ctx context.Context, id int64) error {
-	records, err := s.store.BalanceRecords.GetByField(ctx, "id", id)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+
+	records, err := balanceRecordsStorage.GetByField(ctx, "id", id)
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	record := records[0]
 
-	balance, err := s.store.Balances.GetById(ctx, &record.BalanceID)
+	balance, err := balancesStorage.GetById(ctx, &record.BalanceID)
 	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE GETTING BALANCE WITH ID %v", err)
 	}
 
@@ -55,32 +123,47 @@ func (s *BalanceRecordService) RollbackBalanceRecord(ctx context.Context, id int
 			balance.Balance -= record.Amount
 			balance.OutInLay -= record.Amount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO ROLLBACK TRANSACTION %v >= %v", balance.Balance, record.Amount)
 		}
 	default:
+		tx.Rollback()
 		return fmt.Errorf("FOUND UNKOWN RECORD TYPE")
 	}
 
-	if err := s.store.Balances.Update(ctx, balance); err != nil {
+	if err := balancesStorage.Update(ctx, balance); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING BALANCE %v", err)
 	}
 
-	if err := s.store.BalanceRecords.Delete(ctx, record.ID); err != nil {
+	if err := balanceRecordsStorage.Delete(ctx, record.ID); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE DELETING BALANCE RECORD %v", err)
 	}
 
+	tx.Commit()
 	return nil
 }
 
 func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord store.BalanceRecord) error {
-	record, err := s.store.BalanceRecords.GetByField(ctx, "id", &balanceRecord.ID)
+	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
+		return err
+	}
+
+	balancesStorage := store.NewBalanceStorage(tx)
+	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+
+	record, err := balanceRecordsStorage.GetByField(ctx, "id", &balanceRecord.ID)
+	if err != nil {
+		tx.Rollback()
 		return err
 	}
 	oldRecord := record[0]
 
-	balance, err := s.store.Balances.GetById(ctx, &oldRecord.BalanceID)
+	balance, err := balancesStorage.GetById(ctx, &oldRecord.BalanceID)
 	if err != nil {
+		tx.Rollback()
 		return err
 	}
 
@@ -96,6 +179,7 @@ func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord s
 			balance.Balance += balanceRecord.Amount
 			balance.OutInLay += balanceRecord.Amount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("oldRecord BALANCE  HAS NO ENOUGH MONEY")
 		}
 	}
@@ -106,6 +190,7 @@ func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord s
 			balance.Balance -= balanceRecord.Amount
 			balance.InOutLay += balanceRecord.Amount
 		} else {
+			tx.Rollback()
 			return fmt.Errorf("balanceRecord BALANCE  HAS NO ENOUGH MONEY")
 		}
 	case TYPE_BUY:
@@ -113,73 +198,16 @@ func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord s
 		balance.OutInLay += balanceRecord.Amount
 	}
 
-	if err := s.store.Balances.Update(ctx, balance); err != nil {
+	if err := balancesStorage.Update(ctx, balance); err != nil {
+		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING BALANCE %v", err)
 	}
 
-	if err := s.store.BalanceRecords.Update(ctx, &balanceRecord); err != nil {
+	if err := balanceRecordsStorage.Update(ctx, &balanceRecord); err != nil {
+		tx.Rollback()
 		return err
 	}
 
-	return nil
-}
-
-func (s *BalanceRecordService) ReceivedMoneyPerform(ctx context.Context, balanceRecord types.BalanceRecordPayload, receivedCurrencyBalance *store.Balance) error {
-
-	if receivedCurrencyBalance != nil {
-		receivedCurrencyBalance.Balance += balanceRecord.ReceivedMoney
-		receivedCurrencyBalance.OutInLay += balanceRecord.ReceivedMoney
-	}
-
-	err := s.store.Balances.Update(ctx, receivedCurrencyBalance)
-	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING receivedCurrencyBalance %v", err)
-	}
-
-	receivedMoneyRecord := &store.BalanceRecord{
-		Amount:    balanceRecord.ReceivedMoney,
-		Currency:  balanceRecord.ReceivedCurrency,
-		CompanyID: balanceRecord.CompanyID,
-		BalanceID: receivedCurrencyBalance.ID,
-		Details:   &balanceRecord.Details,
-		UserID:    balanceRecord.UserId,
-		Type:      TYPE_BUY,
-	}
-
-	err = s.store.BalanceRecords.Create(ctx, receivedMoneyRecord)
-	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
-	}
-
-	return nil
-}
-
-func (s *BalanceRecordService) SelledMoneyPerform(ctx context.Context, balanceRecord types.BalanceRecordPayload, selledCurrencyBalance *store.Balance) error {
-	if selledCurrencyBalance.Balance >= balanceRecord.ReceivedMoney {
-		selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
-		selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
-	} else {
-		return fmt.Errorf("SELLED CURRENCY HAVE NO ENOUGH MONEY")
-	}
-
-	err := s.store.Balances.Update(ctx, selledCurrencyBalance)
-	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING selledCurrencyBalance %v", err)
-	}
-
-	selledMoneyRecord := &store.BalanceRecord{
-		Amount:    balanceRecord.SelledMoney,
-		Currency:  balanceRecord.SelledCurrency,
-		CompanyID: balanceRecord.CompanyID,
-		BalanceID: selledCurrencyBalance.ID,
-		Details:   &balanceRecord.Details,
-		UserID:    balanceRecord.UserId,
-		Type:      TYPE_SELL,
-	}
-
-	err = s.store.BalanceRecords.Create(ctx, selledMoneyRecord)
-	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
-	}
+	tx.Commit()
 	return nil
 }

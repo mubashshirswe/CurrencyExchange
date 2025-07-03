@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 )
 
@@ -35,7 +34,11 @@ type Debtors struct {
 */
 
 type DebtorsStorage struct {
-	db *sql.DB
+	db DBTX
+}
+
+func NewDebtorsStorage(db DBTX) *DebtorsStorage {
+	return &DebtorsStorage{db: db}
 }
 
 func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
