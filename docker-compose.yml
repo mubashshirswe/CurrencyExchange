@@ -1,41 +1,23 @@
 services:
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8080:8080"
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./.env:/app/.env
-  #   depends_on:
-  #     - postgres-db
-  #     - cache
-  #   networks:
-  #     - app-network
-
   postgres-db:
     image: postgres:16.3
     environment:
-      POSTGRES_HOST: postgres-db
       POSTGRES_USER: qweqweqeqe12312314
       POSTGRES_PASSWORD: qweqweqeqe12312314
       POSTGRES_DB: currency_exchange
+    ports:
+      - "5432:5432"  # Map Postgres port
     volumes:
       - db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"  
     networks:
       - app-network
     restart: always
-
 
   cache:
     image: redis:6.2-alpine
     restart: always
     ports:
-      - "6378:6379"
+      - "6378:6379"  # Map Redis port
     command: redis-server --save 20 1 --loglevel warning --requirepass "redisCurrencyPasswordqwert12131"
     volumes:
       - cache:/data
@@ -48,7 +30,5 @@ networks:
 
 volumes:
   db-data:
-    driver: local
   cache:
-    driver: local
 
