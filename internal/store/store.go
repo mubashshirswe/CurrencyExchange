@@ -16,6 +16,14 @@ type DBTX interface {
 type Storage struct {
 	DB *sql.DB
 
+	Exchanges interface {
+		Create(context.Context, *Exchange) error
+		Update(context.Context, *Exchange) error
+		GetById(context.Context, int64) (*Exchange, error)
+		GetByField(context.Context, string, any) ([]Exchange, error)
+		Delete(context.Context, int64) error
+	}
+
 	Debtors interface {
 		Create(context.Context, *Debtors) error
 		Update(context.Context, *Debtors) error
@@ -37,7 +45,7 @@ type Storage struct {
 	Balances interface {
 		Create(context.Context, *Balance) error
 		GetById(context.Context, *int64) (*Balance, error)
-		GetByIdAndCurrency(context.Context, *int64, string) (*Balance, error)
+		GetByUserIdAndCurrency(context.Context, *int64, string) (*Balance, error)
 		GetByUserId(context.Context, *int64) ([]Balance, error)
 		GetAll(context.Context) ([]Balance, error)
 		Update(context.Context, *Balance) error
@@ -74,6 +82,7 @@ func NewStorage(db *sql.DB) Storage {
 
 	return Storage{
 		DB:             db,
+		Exchanges:      &ExchangeStorage{db: dbwrapper},
 		Debtors:        &DebtorsStorage{db: dbwrapper},
 		Users:          &UserStorage{db: dbwrapper},
 		Transactions:   &TransactionStorage{db: dbwrapper},

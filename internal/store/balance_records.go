@@ -14,6 +14,7 @@ type BalanceRecord struct {
 	CompanyID     int64     `json:"company_id"`
 	TransactionId *int64    `json:"transaction_id"`
 	DebtorId      *int64    `json:"debtor_id"`
+	ExchangeId    *int64    `json:"exchange_id"`
 	Details       *string   `json:"details"`
 	Currency      string    `json:"currency"`
 	Type          int64     `json:"type"`
@@ -30,8 +31,8 @@ func NewBalanceRecordStorage(db DBTX) *BalanceRecordStorage {
 
 func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *BalanceRecord) error {
 	query := `
-				INSERT INTO balance_records(amount, user_id, balance_id, company_id, transaction_id, debtor_id,  details, currency, type)
-				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, created_at`
+				INSERT INTO balance_records(amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type)
+				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at`
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -42,6 +43,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.CompanyID,
 		balanceRecord.TransactionId,
 		balanceRecord.DebtorId,
+		balanceRecord.ExchangeId,
 		balanceRecord.Details,
 		balanceRecord.Currency,
 		balanceRecord.Type,
@@ -56,7 +58,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *BalanceRecord) error {
 	query := `
 				UPDATE balance_records SET amount = $1, user_id = $2, balance_id = $3, company_id = $4, transaction_id = $5, debtor_id = $6,  
-				details = $7, currency = $8, type = $9 WHERE id = $10
+				details = $7, currency = $8, type = $9, exchange_id = $10 WHERE id = $11
 			`
 
 	_, err := s.db.ExecContext(
@@ -71,6 +73,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.Details,
 		balanceRecord.Currency,
 		balanceRecord.Type,
+		balanceRecord.ExchangeId,
 		balanceRecord.ID,
 	)
 
@@ -79,7 +82,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 
 func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
-				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id,  details, currency, type, created_at
+				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type, created_at
 				FROM balance_records WHERE ` + fieldName + ` = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
@@ -100,7 +103,7 @@ func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName,
 
 func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
-				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id,  details, currency, type, created_at
+				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type, created_at
 				FROM balance_records WHERE ` + fieldName + ` = $1 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
@@ -130,6 +133,7 @@ func (s *BalanceRecordStorage) FetchDataFromQuery(rows *sql.Rows) ([]BalanceReco
 			&balance.CompanyID,
 			&balance.TransactionId,
 			&balance.DebtorId,
+			&balance.ExchangeId,
 			&balance.Details,
 			&balance.Currency,
 			&balance.Type,
@@ -153,7 +157,19 @@ func (s *BalanceRecordStorage) FetchDataFromQuery(rows *sql.Rows) ([]BalanceReco
 func (s *BalanceRecordStorage) Delete(ctx context.Context, id int64) error {
 	query := `DELETE FROM balance_records WHERE id = $1`
 
-	_, err := s.db.QueryContext(
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		id,
+	)
+
+	return err
+}
+
+func (s *BalanceRecordStorage) DeleteByExchangeId(ctx context.Context, id int64) error {
+	query := `DELETE FROM balance_records WHERE exchange_id = $1`
+
+	_, err := s.db.ExecContext(
 		ctx,
 		query,
 		id,

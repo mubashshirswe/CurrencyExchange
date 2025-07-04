@@ -10,6 +10,12 @@ import (
 )
 
 type Service struct {
+	Exchanges interface {
+		Create(context.Context, *store.Exchange) error
+		Update(context.Context, *store.Exchange) error
+		Delete(context.Context, int64) error
+	}
+
 	Debtors interface {
 		Create(context.Context, *store.Debtors) error
 		Transaction(context.Context, *store.Debtors) error
@@ -33,6 +39,7 @@ type Service struct {
 
 func NewService(store store.Storage) Service {
 	return Service{
+		Exchanges:      &ExchangeService{store: store},
 		BalanceRecords: &BalanceRecordService{store: store},
 		Transactions:   &TransactionService{store: store},
 		Debtors:        &DebtorsService{store: store},

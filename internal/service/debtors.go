@@ -21,10 +21,10 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
 	debtorsStorage := store.NewDebtorsStorage(tx)
 
-	balance, err := balancesStorage.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
+	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByIdAndCurrency")
+		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByUserIdAndCurrency")
 	}
 
 	debtor.CompanyID = balance.CompanyId
@@ -44,7 +44,7 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 
 	if err := debtorsStorage.Create(ctx, debtor); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE debtorsStorage.Create %v", err)
 	}
 
 	record := &store.BalanceRecord{
@@ -59,12 +59,12 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 
 	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
 		tx.Rollback()
-		return fmt.Errorf("ROLLBACK ISHLADI")
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Create %v", err)
 	}
 
-	if err := balancesStorage.Update(ctx, balance); err == nil {
+	if err := balancesStorage.Update(ctx, balance); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Update %v", err)
 	}
 
 	tx.Commit()
@@ -84,7 +84,7 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 	oldDebtor, err := debtorsStorage.GetById(ctx, debtor.ID)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE debtorsStorage.GetById %v", err)
 	}
 
 	if oldDebtor.DebtedCurrency != debtor.DebtedCurrency {
@@ -92,13 +92,14 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 		return fmt.Errorf("DEBTED CURRENCIES ARE NOT MATCH %v", err)
 	}
 
-	balance, err := balancesStorage.GetByIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
+	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &debtor.UserID, debtor.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByIdAndCurrency %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByUserIdAndCurrency %v", err)
 	}
 
 	debtor.CompanyID = balance.CompanyId
+	debtor.Phone = oldDebtor.Phone
 
 	switch debtor.Type {
 	case TYPE_SELL:
@@ -166,14 +167,14 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 	Oldrecords, err := balanceRecordsStorage.GetByField(ctx, "id", &record.ID)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.GetByField %v", err)
 	}
 	oldRecord := Oldrecords[0]
 
 	balance, err := balanceStorage.GetById(ctx, &oldRecord.BalanceID)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceStorage.GetById %v", err)
 	}
 
 	debtor.CompanyID = balance.CompanyId
@@ -212,17 +213,17 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 
 	if err := balanceStorage.Update(ctx, balance); err != nil {
 		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING BALANCE %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceStorage.Update %v", err)
 	}
 
 	if err := balanceRecordsStorage.Update(ctx, record); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Update %v", err)
 	}
 
 	if err := debtorsStorage.Update(ctx, debtor); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE debtorsStorage.Update %v", err)
 	}
 
 	tx.Commit()

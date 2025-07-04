@@ -29,10 +29,10 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
 	transactionsStorage := store.NewTransactionStorage(tx)
 
-	balance, err := balancesStorage.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
+	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
 	}
 
 	switch transaction.Type {
@@ -93,7 +93,7 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 	}
 	tran := transactions[0]
 
-	balance, err := balancesStorage.GetByIdAndCurrency(ctx, tran.DeliveredUserId, tran.DeliveredCurrency)
+	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, tran.DeliveredUserId, tran.DeliveredCurrency)
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -186,7 +186,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 	}
 
 	if transaction.ReceivedUserId != 0 {
-		balance, err := balancesStorage.GetByIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
+		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -215,7 +215,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 	}
 
 	if transaction.DeliveredUserId != nil {
-		balance, err := balancesStorage.GetByIdAndCurrency(ctx, transaction.DeliveredUserId, transaction.DeliveredCurrency)
+		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, transaction.DeliveredUserId, transaction.DeliveredCurrency)
 		if err != nil {
 			tx.Rollback()
 			return err

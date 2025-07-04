@@ -20,26 +20,33 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 
 	balancesStorage := store.NewBalanceStorage(tx)
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
+	usersStorage := store.NewUserStorage(tx)
 
-	receivedCurrencyBalance, err := balancesStorage.GetByIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
+	user, err := usersStorage.GetById(ctx, &balanceRecord.UserId)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	receivedCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", balanceRecord.ReceivedCurrency)
 	}
 
-	selledCurrencyBalance, err := balancesStorage.GetByIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
+	selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
 	if err != nil {
 		tx.Rollback()
 		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", balanceRecord.SelledCurrency)
 	}
 
 	/// SELLED MONEY PEFPERFORMROM
-	if selledCurrencyBalance.Balance >= balanceRecord.ReceivedMoney {
+	if selledCurrencyBalance.Balance >= balanceRecord.SelledMoney {
 		selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
 		selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
 	} else {
 		tx.Rollback()
-		return fmt.Errorf("SELLED CURRENCY HAVE NO ENOUGH MONEY")
+		return fmt.Errorf("SELLED CURRENCY HAVE NO ENOUGH MONEY %v >= %v", selledCurrencyBalance.Balance, balanceRecord.ReceivedCurrency)
 	}
 
 	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
@@ -50,7 +57,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 	selledMoneyRecord := &store.BalanceRecord{
 		Amount:    balanceRecord.SelledMoney,
 		Currency:  balanceRecord.SelledCurrency,
-		CompanyID: balanceRecord.CompanyID,
+		CompanyID: user.CompanyId,
 		BalanceID: selledCurrencyBalance.ID,
 		Details:   &balanceRecord.Details,
 		UserID:    balanceRecord.UserId,
@@ -76,7 +83,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 	receivedMoneyRecord := &store.BalanceRecord{
 		Amount:    balanceRecord.ReceivedMoney,
 		Currency:  balanceRecord.ReceivedCurrency,
-		CompanyID: balanceRecord.CompanyID,
+		CompanyID: user.CompanyId,
 		BalanceID: receivedCurrencyBalance.ID,
 		Details:   &balanceRecord.Details,
 		UserID:    balanceRecord.UserId,
@@ -176,8 +183,6 @@ func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord s
 			balance.Balance -= oldRecord.Amount
 			balance.OutInLay -= oldRecord.Amount
 
-			balance.Balance += balanceRecord.Amount
-			balance.OutInLay += balanceRecord.Amount
 		} else {
 			tx.Rollback()
 			return fmt.Errorf("oldRecord BALANCE  HAS NO ENOUGH MONEY")

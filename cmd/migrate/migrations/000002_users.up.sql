@@ -5,8 +5,6 @@ create table if not exists users(
     avatar varchar(255) default null,
     username varchar(255) not null,
     password bytea not null,
-    company_id bigint default null,
+    company_id bigint default null REFERENCES companies(id),
     created_at timestamp(0) with time zone not null default now()
 )
-
-ALTER TABLE transactions ADD CONSTRAINT fk_transactions_company_id FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL;

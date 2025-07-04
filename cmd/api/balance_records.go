@@ -77,6 +77,8 @@ func (app *application) UpdateBalanceRecordHandler(w http.ResponseWriter, r *htt
 		return
 	}
 
+	payload.ID = getIDFromContext(r)
+
 	if err := app.service.BalanceRecords.UpdateRecord(r.Context(), payload); err != nil {
 		app.internalServerError(w, r, err)
 		return

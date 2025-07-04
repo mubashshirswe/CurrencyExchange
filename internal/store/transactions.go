@@ -9,22 +9,22 @@ import (
 )
 
 type Transaction struct {
-	ID                 int64     `json:"id"`
-	MarkedServiceFee   *int64    `json:"marked_service_fee"`
-	ReceivedServiceFee *int64    `json:"received_service_fee"`
-	ReceivedAmount     int64     `json:"received_amount"`
-	ReceivedCurrency   string    `json:"received_currency"`
-	DeliveredAmount    int64     `json:"delivered_amount"`
-	DeliveredCurrency  string    `json:"delivered_currency"`
-	SenderCompanyId    int64     `json:"sender_company_id"`
-	ReceiverCompanyId  int64     `json:"receiver_company_id"`
-	ReceivedUserId     int64     `json:"received_user_id"`
-	DeliveredUserId    *int64    `json:"delivered_user_id"`
-	Phone              string    `json:"phone"`
-	Details            string    `json:"details"`
-	Status             int64     `json:"status"`
-	Type               int64     `json:"type"`
-	CreatedAt          time.Time `json:"created_at"`
+	ID                  int64     `json:"id"`
+	MarkedServiceFee    *int64    `json:"marked_service_fee"`
+	ReceivedCompanyId   int64     `json:"received_company_id"`
+	ReceivedUserId      int64     `json:"received_user_id"`
+	ReceivedAmount      int64     `json:"received_amount"`
+	ReceivedCurrency    string    `json:"received_currency"`
+	DeliveredAmount     int64     `json:"delivered_amount"`
+	DeliveredCurrency   string    `json:"delivered_currency"`
+	DeliveredCompanyId  int64     `json:"delivered_company_id"`
+	DeliveredUserId     *int64    `json:"delivered_user_id"`
+	DeliveredServiceFee *int64    `json:"delivered_service_fee"`
+	Phone               string    `json:"phone"`
+	Details             string    `json:"details"`
+	Status              int64     `json:"status"`
+	Type                int64     `json:"type"`
+	CreatedAt           time.Time `json:"created_at"`
 }
 
 type TransactionStorage struct {
@@ -38,21 +38,21 @@ func NewTransactionStorage(db DBTX) *TransactionStorage {
 func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error {
 	query := `
 			INSERT INTO transactions(
-				marked_service_fee, received_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
-	 			sender_company_id, receiver_company_id, received_user_id, delivered_user_id, phone, details, status, type) 
+				marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type) 
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
 
 	_, err := s.db.QueryContext(
 		ctx,
 		query,
 		tr.MarkedServiceFee,
-		tr.ReceivedServiceFee,
+		tr.DeliveredServiceFee,
 		tr.ReceivedAmount,
 		tr.ReceivedCurrency,
 		tr.DeliveredAmount,
 		tr.DeliveredCurrency,
-		tr.SenderCompanyId,
-		tr.ReceiverCompanyId,
+		tr.ReceivedCompanyId,
+		tr.DeliveredCompanyId,
 		tr.ReceivedUserId,
 		tr.DeliveredUserId,
 		tr.Phone,
@@ -70,21 +70,21 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 
 func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error {
 	query := `	
-				UPDATE transactions SET marked_service_fee = $1, received_service_fee = $2, received_amount = $3, received_currency = $4, 
-				delivered_amount = $5, delivered_currency = $6, sender_company_id = $7, receiver_company_id = $8, received_user_id = $9, 
+				UPDATE transactions SET marked_service_fee = $1, delivered_service_fee = $2, received_amount = $3, received_currency = $4, 
+				delivered_amount = $5, delivered_currency = $6, received_company_id = $7, delivered_company_id = $8, received_user_id = $9, 
 				delivered_user_id = $10, phone = $11, details = $12, status = $13, type = $14 WHERE id = $15`
 
 	rows, err := s.db.ExecContext(
 		ctx,
 		query,
 		tr.MarkedServiceFee,
-		tr.ReceivedServiceFee,
+		tr.DeliveredServiceFee,
 		tr.ReceivedAmount,
 		tr.ReceivedCurrency,
 		tr.DeliveredAmount,
 		tr.DeliveredCurrency,
-		tr.SenderCompanyId,
-		tr.ReceiverCompanyId,
+		tr.ReceivedCompanyId,
+		tr.DeliveredCompanyId,
 		tr.ReceivedUserId,
 		tr.DeliveredUserId,
 		tr.Phone,
@@ -111,8 +111,8 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 
 func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, received_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
-	 			sender_company_id, receiver_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
+				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 ORDER BY created_at DESC
 			`
 
@@ -127,8 +127,8 @@ func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, f
 
 func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, received_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
-	 			sender_company_id, receiver_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
+				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at DESC
 			`
 
@@ -180,13 +180,13 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 		err := rows.Scan(
 			&tr.ID,
 			&tr.MarkedServiceFee,
-			&tr.ReceivedServiceFee,
+			&tr.DeliveredServiceFee,
 			&tr.ReceivedAmount,
 			&tr.ReceivedCurrency,
 			&tr.DeliveredAmount,
 			&tr.DeliveredCurrency,
-			&tr.SenderCompanyId,
-			&tr.ReceiverCompanyId,
+			&tr.ReceivedCompanyId,
+			&tr.DeliveredCompanyId,
 			&tr.ReceivedUserId,
 			&tr.DeliveredUserId,
 			&tr.Phone,

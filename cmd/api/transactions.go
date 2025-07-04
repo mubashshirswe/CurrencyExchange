@@ -8,20 +8,19 @@ import (
 )
 
 type TransactionPayload struct {
-	MarkedServiceFee   *int64 `json:"marked_service_fee"`
-	ReceivedServiceFee *int64 `json:"received_service_fee"`
-	ReceivedAmount     int64  `json:"received_amount"`
-	ReceivedCurrency   string `json:"received_currency"`
-	DeliveredAmount    int64  `json:"delivered_amount"`
-	DeliveredCurrency  string `json:"delivered_currency"`
-	SenderCompanyId    int64  `json:"sender_company_id"`
-	ReceiverCompanyId  int64  `json:"receiver_company_id"`
-	ReceivedUserId     int64  `json:"received_user_id"`
-	DeliveredUserId    *int64 `json:"delivered_user_id"`
-	Phone              string `json:"phone"`
-	Details            string `json:"details"`
-	Status             int64  `json:"status"`
-	Type               int64  `json:"type"`
+	MarkedServiceFee    *int64 `json:"marked_service_fee"`
+	DeliveredServiceFee *int64 `json:"delivered_service_fee"`
+	ReceivedAmount      int64  `json:"received_amount"`
+	ReceivedCurrency    string `json:"received_currency"`
+	DeliveredAmount     int64  `json:"delivered_amount"`
+	DeliveredCurrency   string `json:"delivered_currency"`
+	ReceivedCompanyId   int64  `json:"received_company_id"`
+	DeliveredCompanyId  int64  `json:"delivered_company_id"`
+	ReceivedUserId      int64  `json:"received_user_id"`
+	DeliveredUserId     *int64 `json:"delivered_user_id"`
+	Phone               string `json:"phone"`
+	Details             string `json:"details"`
+	Type                int64  `json:"type"`
 }
 
 func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.Request) {
@@ -37,19 +36,19 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 
 	transaction := &store.Transaction{
-		MarkedServiceFee:   payload.MarkedServiceFee,
-		ReceivedServiceFee: payload.ReceivedServiceFee,
-		ReceivedAmount:     payload.ReceivedAmount,
-		ReceivedCurrency:   payload.ReceivedCurrency,
-		DeliveredAmount:    payload.DeliveredAmount,
-		DeliveredCurrency:  payload.DeliveredCurrency,
-		SenderCompanyId:    payload.SenderCompanyId,
-		ReceiverCompanyId:  payload.ReceiverCompanyId,
-		ReceivedUserId:     payload.ReceivedUserId,
-		DeliveredUserId:    payload.DeliveredUserId,
-		Phone:              payload.Phone,
-		Details:            payload.Details,
-		Status:             1,
+		MarkedServiceFee:    payload.MarkedServiceFee,
+		DeliveredServiceFee: payload.DeliveredServiceFee,
+		ReceivedAmount:      payload.ReceivedAmount,
+		ReceivedCurrency:    payload.ReceivedCurrency,
+		DeliveredAmount:     payload.DeliveredAmount,
+		DeliveredCurrency:   payload.DeliveredCurrency,
+		ReceivedCompanyId:   payload.ReceivedCompanyId,
+		DeliveredCompanyId:  payload.DeliveredCompanyId,
+		ReceivedUserId:      payload.ReceivedUserId,
+		DeliveredUserId:     payload.DeliveredUserId,
+		Phone:               payload.Phone,
+		Details:             payload.Details,
+		Status:              1,
 	}
 
 	if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
@@ -71,20 +70,20 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 
 	transaction := &store.Transaction{
-		ID:                 getIDFromContext(r),
-		MarkedServiceFee:   payload.MarkedServiceFee,
-		ReceivedServiceFee: payload.ReceivedServiceFee,
-		ReceivedAmount:     payload.ReceivedAmount,
-		ReceivedCurrency:   payload.ReceivedCurrency,
-		DeliveredAmount:    payload.DeliveredAmount,
-		DeliveredCurrency:  payload.DeliveredCurrency,
-		SenderCompanyId:    payload.SenderCompanyId,
-		ReceiverCompanyId:  payload.ReceiverCompanyId,
-		ReceivedUserId:     payload.ReceivedUserId,
-		DeliveredUserId:    payload.DeliveredUserId,
-		Phone:              payload.Phone,
-		Details:            payload.Details,
-		Status:             1,
+		ID:                  getIDFromContext(r),
+		MarkedServiceFee:    payload.MarkedServiceFee,
+		DeliveredServiceFee: payload.DeliveredServiceFee,
+		ReceivedAmount:      payload.ReceivedAmount,
+		ReceivedCurrency:    payload.ReceivedCurrency,
+		DeliveredAmount:     payload.DeliveredAmount,
+		DeliveredCurrency:   payload.DeliveredCurrency,
+		ReceivedCompanyId:   payload.ReceivedCompanyId,
+		DeliveredCompanyId:  payload.DeliveredCompanyId,
+		ReceivedUserId:      payload.ReceivedUserId,
+		DeliveredUserId:     payload.DeliveredUserId,
+		Phone:               payload.Phone,
+		Details:             payload.Details,
+		Status:              1,
 	}
 
 	if err := app.service.Transactions.Update(r.Context(), transaction); err != nil {

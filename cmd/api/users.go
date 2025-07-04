@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/env"
@@ -43,6 +44,30 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 
 	if err := app.store.Users.Create(r.Context(), user); err != nil {
 		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.store.Balances.Create(context.Background(), &store.Balance{
+		Balance:   0,
+		UserId:    user.ID,
+		CompanyId: user.CompanyId,
+		InOutLay:  0,
+		OutInLay:  0,
+		Currency:  "USD",
+	}); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := app.store.Balances.Create(context.Background(), &store.Balance{
+		Balance:   0,
+		UserId:    user.ID,
+		CompanyId: user.CompanyId,
+		InOutLay:  0,
+		OutInLay:  0,
+		Currency:  "UZS",
+	}); err != nil {
+		app.badRequestResponse(w, r, err)
 		return
 	}
 

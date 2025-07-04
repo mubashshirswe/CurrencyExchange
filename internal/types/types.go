@@ -7,7 +7,7 @@ type BalanceRecordPayload struct {
 	SelledMoney      int64  `json:"selled_money"`
 	SelledCurrency   string `json:"selled_currency"`
 	UserId           int64  `json:"user_id"`
-	CompanyID        int64  `json:"company_id"`
+	CompanyID        *int64 `json:"company_id"`
 	Details          string `json:"details"`
 }
 

@@ -94,11 +94,11 @@ func (s *BalanceStorage) GetAll(ctx context.Context) ([]Balance, error) {
 	return balances, nil
 }
 
-func (s *BalanceStorage) GetByIdAndCurrency(ctx context.Context, userID *int64, currency string) (*Balance, error) {
+func (s *BalanceStorage) GetByUserIdAndCurrency(ctx context.Context, userID *int64, currency string) (*Balance, error) {
 	query := `SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at  FROM balances WHERE user_id = $1 AND currency = $2`
 	balance := &Balance{}
 
-	err := s.db.QueryRowContext(ctx, query, userID, currency).Scan(
+	err := s.db.QueryRowContext(ctx, query, *userID, currency).Scan(
 		&balance.ID,
 		&balance.Balance,
 		&balance.UserId,
