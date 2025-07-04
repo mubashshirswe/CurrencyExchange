@@ -1,6 +1,8 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
@@ -48,6 +50,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		DeliveredUserId:     payload.DeliveredUserId,
 		Phone:               payload.Phone,
 		Details:             payload.Details,
+		Type:                payload.Type,
 		Status:              1,
 	}
 
@@ -105,7 +108,11 @@ func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *htt
 	}
 
 	if err := app.service.Transactions.CompleteTransaction(r.Context(), payload); err != nil {
-		app.internalServerError(w, r, err)
+		if err == sql.ErrNoRows {
+			app.notFoundErrorResponse(w, r, fmt.Errorf("BUYURTMA ALLAQACHON YAKUNLANGAN"))
+		} else {
+			app.internalServerError(w, r, err)
+		}
 		return
 	}
 

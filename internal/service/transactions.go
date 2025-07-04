@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
@@ -32,7 +33,11 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
+		if err == sql.ErrNoRows {
+			return err
+		} else {
+			return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
+		}
 	}
 
 	switch transaction.Type {
@@ -72,6 +77,11 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
 	}
 
+	if err := balancesStorage.Update(ctx, balance); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
+	}
+
 	tx.Commit()
 	return nil
 }
@@ -86,17 +96,16 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
 	transactionsStorage := store.NewTransactionStorage(tx)
 
-	transactions, err := transactionsStorage.GetByField(ctx, "id", transaction.TransactionID)
+	tran, err := transactionsStorage.GetById(ctx, transaction.TransactionID)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	tran := transactions[0]
 
-	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, tran.DeliveredUserId, tran.DeliveredCurrency)
+	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.DeliveredUserId, tran.DeliveredCurrency)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency( %v", err)
 	}
 
 	var recordType int64
@@ -119,19 +128,28 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 		Amount:        tran.DeliveredAmount,
 		Currency:      tran.DeliveredCurrency,
 		BalanceID:     balance.ID,
-		UserID:        *tran.DeliveredUserId,
+		UserID:        transaction.DeliveredUserId,
 		TransactionId: &tran.ID,
+		CompanyID:     tran.DeliveredCompanyId,
 		Type:          recordType,
 	}
 
-	if err := balanceRecordsStorage.Create(context.Background(), balanceRecord); err != nil {
+	if err := balanceRecordsStorage.Create(ctx, balanceRecord); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Create %v", err)
 	}
 
-	if err := balancesStorage.Create(context.Background(), balance); err != nil {
+	if err := balancesStorage.Update(ctx, balance); err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Create %v", err)
+	}
+
+	tran.Status = 3
+	tran.DeliveredServiceFee = &transaction.RecievedServiceFee
+
+	if err := transactionsStorage.Update(ctx, tran); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE transactionsStorage.Update %v", err)
 	}
 
 	tx.Commit()
@@ -203,6 +221,9 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 			Type:          transaction.Type,
 		}
 
+		balance.Balance += transaction.ReceivedAmount
+		balance.OutInLay += transaction.ReceivedAmount
+
 		if err := balancesStorage.Update(ctx, balance); err != nil {
 			tx.Rollback()
 			return err
@@ -262,12 +283,11 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
 	transactionsStorage := store.NewTransactionStorage(tx)
 
-	trans, err := transactionsStorage.GetByField(ctx, "id", id)
+	tran, err := transactionsStorage.GetById(ctx, *id)
 	if err != nil {
 		tx.Rollback()
 		return err
 	}
-	tran := trans[0]
 
 	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", tran.ID)
 	if err != nil {

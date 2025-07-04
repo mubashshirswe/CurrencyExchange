@@ -40,9 +40,9 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 			INSERT INTO transactions(
 				marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, created_at`
 
-	_, err := s.db.QueryContext(
+	err := s.db.QueryRowContext(
 		ctx,
 		query,
 		tr.MarkedServiceFee,
@@ -59,6 +59,9 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		tr.Details,
 		tr.Status,
 		tr.Type,
+	).Scan(
+		&tr.ID,
+		&tr.CreatedAt,
 	)
 
 	if err != nil {
@@ -72,7 +75,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 	query := `	
 				UPDATE transactions SET marked_service_fee = $1, delivered_service_fee = $2, received_amount = $3, received_currency = $4, 
 				delivered_amount = $5, delivered_currency = $6, received_company_id = $7, delivered_company_id = $8, received_user_id = $9, 
-				delivered_user_id = $10, phone = $11, details = $12, status = $13, type = $14 WHERE id = $15`
+				delivered_user_id = $10, phone = $11, details = $12, status = $13, type = $14 WHERE id = $15 AND status = $16`
 
 	rows, err := s.db.ExecContext(
 		ctx,
@@ -92,6 +95,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 		tr.Status,
 		tr.Type,
 		tr.ID,
+		STATUS_CREATED,
 	)
 
 	if err != nil {
@@ -107,6 +111,45 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 	}
 
 	return nil
+}
+
+func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transaction, error) {
+	query := `
+				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
+				FROM transactions WHERE id = $1 AND status = $2 ORDER BY created_at DESC
+			`
+
+	tr := &Transaction{}
+
+	err := s.db.QueryRowContext(
+		ctx,
+		query,
+		id,
+		STATUS_CREATED,
+	).Scan(
+		&tr.ID,
+		&tr.MarkedServiceFee,
+		&tr.DeliveredServiceFee,
+		&tr.ReceivedAmount,
+		&tr.ReceivedCurrency,
+		&tr.DeliveredAmount,
+		&tr.DeliveredCurrency,
+		&tr.ReceivedCompanyId,
+		&tr.DeliveredCompanyId,
+		&tr.ReceivedUserId,
+		&tr.DeliveredUserId,
+		&tr.Phone,
+		&tr.Details,
+		&tr.Status,
+		&tr.Type,
+		&tr.CreatedAt)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return tr, nil
 }
 
 func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Transaction, error) {

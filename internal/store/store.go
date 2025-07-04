@@ -5,6 +5,12 @@ import (
 	"database/sql"
 )
 
+const (
+	STATUS_CREATED   = 1
+	STATUS_COMPLETED = 2
+	STATUS_ARCHIVED  = 3
+)
+
 type DBTX interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
