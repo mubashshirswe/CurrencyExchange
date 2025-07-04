@@ -1,19 +1,4 @@
 services:
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8080:8080"
-  #   env_file:
-  #     - .env
-  #   volumes:
-  #     - ./.env:/app/.env
-  #   depends_on:
-  #     - postgres-db
-  #     - cache
-  #   networks:
-  #     - app-network
 
   postgres-db:
     image: postgres:16.3

@@ -98,9 +98,9 @@ func (app *application) mount() *chi.Mux {
 
 			r.Route("/transactions", func(r chi.Router) {
 				r.Post("/create", app.CreateTransactionHandler)
-				r.Get("/complete/{serial_no}", app.CompleteTransactionHandler)
-				r.Get("/fetch.by.field", app.GetTransactionsByFieldHandler)
-				r.Get("/fetch.by.field-and-date", app.GetTransactionsByFieldAndDateHandler)
+				r.Post("/complete", app.CompleteTransactionHandler)
+				r.Post("/fetch.by.field", app.GetTransactionsByFieldHandler)
+				r.Post("/fetch.by.field-and-date", app.GetTransactionsByFieldAndDateHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Put("/", app.UpdateTransactionHandler)
 					r.Delete("/", app.DeleteTransactionHandler)

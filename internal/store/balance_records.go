@@ -3,22 +3,23 @@ package store
 import (
 	"context"
 	"database/sql"
-	"time"
+	"encoding/json"
+	"fmt"
 )
 
 type BalanceRecord struct {
-	ID            int64     `json:"id"`
-	Amount        int64     `json:"amount"`
-	UserID        int64     `json:"user_id"`
-	BalanceID     int64     `json:"balance_id"`
-	CompanyID     int64     `json:"company_id"`
-	TransactionId *int64    `json:"transaction_id"`
-	DebtorId      *int64    `json:"debtor_id"`
-	ExchangeId    *int64    `json:"exchange_id"`
-	Details       *string   `json:"details"`
-	Currency      string    `json:"currency"`
-	Type          int64     `json:"type"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            int64   `json:"id"`
+	Amount        int64   `json:"amount"`
+	UserID        int64   `json:"user_id"`
+	BalanceID     int64   `json:"balance_id"`
+	CompanyID     int64   `json:"company_id"`
+	TransactionId *int64  `json:"transaction_id"`
+	DebtorId      *int64  `json:"debtor_id"`
+	ExchangeId    *int64  `json:"exchange_id"`
+	Details       *string `json:"details"`
+	Currency      string  `json:"currency"`
+	Type          int64   `json:"type"`
+	CreatedAt     string  `json:"created_at"`
 }
 
 type BalanceRecordStorage struct {
@@ -31,12 +32,23 @@ func NewBalanceRecordStorage(db DBTX) *BalanceRecordStorage {
 
 func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *BalanceRecord) error {
 	query := `
-				INSERT INTO balance_records(amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type)
-				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, created_at`
+		INSERT INTO balance_records (
+			amount, user_id, balance_id, company_id,
+			transaction_id, debtor_id, exchange_id,
+			details, currency, type
+		)
+		VALUES (
+			$1, $2, $3, $4,
+			$5, $6, $7,
+			$8, $9, $10
+		)
+		RETURNING id, created_at
+	`
 
-	err := s.db.QueryRowContext(
-		ctx,
-		query,
+	jsonD, _ := json.Marshal(balanceRecord)
+	fmt.Printf("balanceRecord %v", string(jsonD))
+
+	row := s.db.QueryRowContext(ctx, query,
 		balanceRecord.Amount,
 		balanceRecord.UserID,
 		balanceRecord.BalanceID,
@@ -47,12 +59,13 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.Details,
 		balanceRecord.Currency,
 		balanceRecord.Type,
-	).Scan(
-		&balanceRecord.ID,
-		&balanceRecord.CreatedAt,
 	)
 
-	return err
+	if err := row.Scan(&balanceRecord.ID, &balanceRecord.CreatedAt); err != nil {
+		return fmt.Errorf("failed to insert balance_record: %w", err)
+	}
+
+	return nil
 }
 
 func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *BalanceRecord) error {
@@ -144,9 +157,9 @@ func (s *BalanceRecordStorage) FetchDataFromQuery(rows *sql.Rows) ([]BalanceReco
 			return nil, err
 		}
 
-		loc, _ := time.LoadLocation("Asia/Tashkent")
-		createdAtInTashkent := balance.CreatedAt.In(loc)
-		balance.CreatedAt = createdAtInTashkent
+		// loc, _ := time.LoadLocation("Asia/Tashkent")
+		// createdAtInTashkent := balance.CreatedAt.In(loc)
+		// balance.CreatedAt = createdAtInTashkent
 
 		balanceRecords = append(balanceRecords, balance)
 	}
