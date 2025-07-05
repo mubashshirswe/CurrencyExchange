@@ -283,6 +283,11 @@ func (s *DebtorsService) Delete(ctx context.Context, balanceRecordId int64) erro
 		return err
 	}
 
+	if err := debtorsStorage.Update(ctx, debtor); err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	tx.Commit()
 
 	return nil
