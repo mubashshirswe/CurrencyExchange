@@ -58,6 +58,10 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		DebtorId:  &debtor.ID,
 	}
 
+	if debtor.Type == TYPE_SELL {
+		debtor.DebtedAmount -= debtor.DebtedAmount * 2
+	}
+
 	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Create %v", err)
