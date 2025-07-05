@@ -128,6 +128,7 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 		Type:      int64(debtor.Type),
 		Details:   debtor.Details,
 		Currency:  debtor.ReceivedCurrency,
+		DebtorId:  &debtor.ID,
 	}
 
 	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
