@@ -61,7 +61,7 @@ type Storage struct {
 	BalanceRecords interface {
 		Create(context.Context, *BalanceRecord) error
 		GetByField(context.Context, string, any) ([]BalanceRecord, error)
-		GetByFieldAndDate(context.Context, string, string, string, any) ([]BalanceRecord, error)
+		GetByFieldAndDate(context.Context, string, *string, *string, any) ([]BalanceRecord, error)
 		Update(context.Context, *BalanceRecord) error
 		Delete(context.Context, int64) error
 	}

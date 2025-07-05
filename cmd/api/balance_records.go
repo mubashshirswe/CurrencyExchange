@@ -51,14 +51,14 @@ func (app *application) GetBalanceRecordsByUserIdHandler(w http.ResponseWriter, 
 	}
 }
 
-func (app *application) GetBalanceRecordsByBalanceIdHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) GetBalanceRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	var payload FieldRequestPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	records, err := app.store.BalanceRecords.GetByFieldAndDate(r.Context(), payload.FieldName, *payload.From, *payload.To, payload.FieldValue)
+	records, err := app.store.BalanceRecords.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

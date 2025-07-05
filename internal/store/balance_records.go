@@ -93,7 +93,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 	return err
 }
 
-func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any) ([]BalanceRecord, error) {
+func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName string, from, to *string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type, created_at
 				FROM balance_records WHERE ` + fieldName + ` = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at DESC`

@@ -55,6 +55,7 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		Type:      int64(debtor.Type),
 		Details:   debtor.Details,
 		Currency:  debtor.ReceivedCurrency,
+		DebtorId:  &debtor.ID,
 	}
 
 	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
