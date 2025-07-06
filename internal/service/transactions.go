@@ -144,7 +144,7 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Create %v", err)
 	}
 
-	tran.Status = 3
+	tran.Status = TRANSACTION_STATUS_COMPLETED
 	tran.DeliveredServiceFee = &transaction.RecievedServiceFee
 
 	if err := transactionsStorage.Update(ctx, tran); err != nil {
