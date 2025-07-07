@@ -141,6 +141,32 @@ func (app *application) GetTransactionsByFieldHandler(w http.ResponseWriter, r *
 	}
 }
 
+func (app *application) GetTransactionsCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
+	transactions, err := app.service.Transactions.GetByCompanyId(r.Context(), getIDFromContext(r))
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transactions); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) GetInfosByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
+	transactions, err := app.service.Transactions.GetInfos(r.Context(), getIDFromContext(r))
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transactions); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) GetTransactionsByFieldAndDateHandler(w http.ResponseWriter, r *http.Request) {
 	var payload FieldRequestPayload
 	if err := readJSON(w, r, &payload); err != nil {

@@ -332,3 +332,124 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 	tx.Commit()
 	return nil
 }
+
+func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId)
+	if err != nil {
+		return nil, err
+	}
+
+	companies, err := s.store.Companies.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users, err := s.store.Users.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []map[string]interface{}
+	getCurrencies := make(map[string]int64)
+	giveCurrencies := make(map[string]int64)
+
+	for _, tran := range trans {
+		if tran.Status == TRANSACTION_STATUS_PENDING {
+			if tran.Type == TYPE_SELL {
+				getCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+			} else {
+				giveCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+			}
+			res := map[string]interface{}{
+				"marked_service_fee":    tran.MarkedServiceFee,
+				"received_amount":       tran.ReceivedAmount,
+				"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
+				"received_user":         GetUser(users, &tran.ReceivedUserId),
+				"received_currency":     tran.ReceivedCurrency,
+				"delivered_currency":    tran.DeliveredCurrency,
+				"delivered_amount":      tran.DeliveredAmount,
+				"delivered_user":        GetUser(users, tran.DeliveredUserId),
+				"delivered_service_fee": tran.DeliveredServiceFee,
+				"phone":                 tran.Phone,
+				"details":               tran.Details,
+				"created_at":            tran.CreatedAt,
+				"type":                  tran.Type,
+			}
+
+			response = append(response, res)
+		}
+	}
+	response = append(response, map[string]interface{}{
+		"get_currencies": getCurrencies,
+		"giveCurrencies": giveCurrencies,
+	})
+
+	return response, nil
+}
+
+func (s *TransactionService) GetInfos(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId)
+	if err != nil {
+		return nil, err
+	}
+
+	balances, err := s.store.Balances.GetByCompanyId(ctx, &companyId)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []map[string]interface{}
+	getCurrencies := make(map[string]int64)
+	giveCurrencies := make(map[string]int64)
+	currencies := make(map[string]int64)
+	free_currencies := make(map[string]int64)
+
+	for _, balance := range balances {
+		currencies[balance.Currency] += balance.Balance
+	}
+
+	for _, tran := range trans {
+		if tran.Status == TRANSACTION_STATUS_PENDING {
+			if tran.Type == TYPE_SELL {
+				getCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+			} else {
+				giveCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+			}
+		}
+	}
+
+	for i, cur := range currencies {
+		getOne := GetOne(getCurrencies, i)
+		giveOne := GetOne(giveCurrencies, i)
+		cur += getOne
+		cur -= giveOne
+
+		free_currencies[i] += cur
+	}
+
+	response = append(response, map[string]interface{}{
+		"balances":       currencies,
+		"get_currencies": getCurrencies,
+		"giveCurrencies": giveCurrencies,
+		"free_balances":  free_currencies,
+	})
+
+	return response, nil
+}
+
+func GetOne(ids map[string]int64, id string) int64 {
+	for i, company := range ids {
+		if i == id {
+			return company
+		}
+	}
+	return 0
+}
+
+func GetCompany(companies []store.Company, companyId int64) *store.Company {
+	for _, company := range companies {
+		if company.ID == companyId {
+			return &company
+		}
+	}
+	return nil
+}

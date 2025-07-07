@@ -120,6 +120,39 @@ func (s *BalanceStorage) GetByUserIdAndCurrency(ctx context.Context, userID *int
 	return balance, nil
 }
 
+func (s *BalanceStorage) GetByCompanyId(ctx context.Context, userId *int64) ([]Balance, error) {
+	query := `
+				SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at 
+				FROM balances WHERE company_id = $1`
+	rows, err := s.db.QueryContext(ctx, query, userId)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var balances []Balance
+	for rows.Next() {
+		balance := &Balance{}
+		err := rows.Scan(
+			&balance.ID,
+			&balance.Balance,
+			&balance.UserId,
+			&balance.InOutLay,
+			&balance.OutInLay,
+			&balance.CompanyId,
+			&balance.Currency,
+			&balance.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		balances = append(balances, *balance)
+	}
+
+	return balances, nil
+}
+
 func (s *BalanceStorage) GetByUserId(ctx context.Context, userId *int64) ([]Balance, error) {
 	query := `
 				SELECT id, balance, user_id, in_out_lay, out_in_lay, company_id, currency, created_at 

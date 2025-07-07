@@ -69,6 +69,7 @@ func (app *application) mount() *chi.Mux {
 				r.Post("/", app.CreateBalanceHandler)
 				r.Get("/all", app.GetAllBalanceHandler)
 				r.Get("/user/{id}", app.GetBalanceByUserIdHandler)
+				r.Get("/company/{id}", app.GetBalanceByCompanyIdHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Get("/", app.GetBalanceByIdHandler)
 					r.Put("/", app.UpdateBalanceHandler)
@@ -108,6 +109,8 @@ func (app *application) mount() *chi.Mux {
 			r.Route("/transactions", func(r chi.Router) {
 				r.Post("/create", app.CreateTransactionHandler)
 				r.Post("/complete", app.CompleteTransactionHandler)
+				r.Get("/show/process/{id}", app.GetTransactionsCompanyIdHandler)
+				r.Get("/show/info/{id}", app.GetInfosByCompanyIdHandler)
 				r.Post("/fetch.by.field", app.GetTransactionsByFieldHandler)
 				r.Post("/fetch.by.field-and-date", app.GetTransactionsByFieldAndDateHandler)
 				r.Route("/{id}", func(r chi.Router) {

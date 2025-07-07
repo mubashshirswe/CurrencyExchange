@@ -78,6 +78,20 @@ func (app *application) GetBalanceByUserIdHandler(w http.ResponseWriter, r *http
 	}
 }
 
+func (app *application) GetBalanceByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+	balances, err := app.service.Balances.GetByCompanyId(r.Context(), id)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, balances); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) GetAllBalanceHandler(w http.ResponseWriter, r *http.Request) {
 	balance, err := app.store.Balances.GetAll(r.Context())
 	if err != nil {

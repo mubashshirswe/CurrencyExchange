@@ -16,6 +16,10 @@ type Service struct {
 		Delete(context.Context, int64) error
 	}
 
+	Balances interface {
+		GetByCompanyId(context.Context, int64) ([]map[string]interface{}, error)
+	}
+
 	Debtors interface {
 		Create(context.Context, *store.Debtors) error
 		Transaction(context.Context, *store.Debtors) error
@@ -32,6 +36,8 @@ type Service struct {
 	Transactions interface {
 		PerformTransaction(context.Context, *store.Transaction) error
 		CompleteTransaction(context.Context, types.TransactionComplete) error
+		GetByCompanyId(context.Context, int64) ([]map[string]interface{}, error)
+		GetInfos(context.Context, int64) ([]map[string]interface{}, error)
 		Update(context.Context, *store.Transaction) error
 		Delete(context.Context, *int64) error
 	}
@@ -39,6 +45,7 @@ type Service struct {
 
 func NewService(store store.Storage) Service {
 	return Service{
+		Balances:       &BalanceService{store: store},
 		Exchanges:      &ExchangeService{store: store},
 		BalanceRecords: &BalanceRecordService{store: store},
 		Transactions:   &TransactionService{store: store},
