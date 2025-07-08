@@ -59,6 +59,7 @@ func (s *ExchangeStorage) Create(ctx context.Context, exchange *Exchange) error 
 		exchange.SelledCurrency,
 		exchange.UserId,
 		exchange.CompanyID,
+		exchange.Details,
 		STATUS_CREATED,
 	).Scan(
 		&exchange.ID,
