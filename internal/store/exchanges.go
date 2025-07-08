@@ -145,7 +145,7 @@ func (s *ExchangeStorage) GetByField(ctx context.Context, fieldName string, fiel
 	query := `
 				SELECT id, received_money, received_currency, selled_money,
 				selled_currency, user_id, company_id, details, created_at 
-				FROM exchanges WHERE status != $1 ` + fmt.Sprintf(" %v = %v ", fieldName, fieldValue)
+				FROM exchanges WHERE status != $1 AND` + fmt.Sprintf(" %v = %v ", fieldName, fieldValue)
 
 	rows, err := s.db.QueryContext(
 		ctx,
