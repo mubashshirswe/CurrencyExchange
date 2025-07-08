@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type Exchange struct {
@@ -14,6 +15,7 @@ type Exchange struct {
 	UserId           int64   `json:"user_id"`
 	Details          *string `json:"details"`
 	CompanyID        int64   `json:"company_id"`
+	Status           int64   `json:"status"`
 	CreatedAt        *string `json:"created_at"`
 }
 
@@ -25,9 +27,28 @@ func NewExchangeStorage(db DBTX) *ExchangeStorage {
 	return &ExchangeStorage{db: db}
 }
 
+func (s *ExchangeStorage) Archive(ctx context.Context) error {
+	query := `UPDATE exchanges SET created_at = $1, status = $2 WHERE status = $3`
+	rows, err := s.db.ExecContext(ctx, query, time.Now(), STATUS_ARCHIVED, STATUS_CREATED)
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return fmt.Errorf("ERROR NOT FOUND")
+	}
+
+	return nil
+}
+
 func (s *ExchangeStorage) Create(ctx context.Context, exchange *Exchange) error {
-	query := `INSERT INTO exchanges(received_money, received_currency, selled_money, selled_currency, user_id, company_id, details)
-				VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at`
+	query := `INSERT INTO exchanges(received_money, received_currency, selled_money, selled_currency, user_id, company_id, details, status)
+				VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, created_at`
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -38,7 +59,7 @@ func (s *ExchangeStorage) Create(ctx context.Context, exchange *Exchange) error 
 		exchange.SelledCurrency,
 		exchange.UserId,
 		exchange.CompanyID,
-		exchange.Details,
+		STATUS_CREATED,
 	).Scan(
 		&exchange.ID,
 		&exchange.CreatedAt,
@@ -80,15 +101,56 @@ func (s *ExchangeStorage) Update(ctx context.Context, exchange *Exchange) error 
 	return err
 }
 
-func (s *ExchangeStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Exchange, error) {
+func (s *ExchangeStorage) Archived(ctx context.Context) ([]Exchange, error) {
 	query := `
 				SELECT id, received_money, received_currency, selled_money,
 				selled_currency, user_id, company_id, details, created_at 
-				FROM exchanges WHERE ` + fmt.Sprintf(" %v = %v ", fieldName, fieldValue)
+				FROM exchanges WHERE status = $1  ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
 		query,
+		STATUS_ARCHIVED,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var exchanges []Exchange
+	for rows.Next() {
+		exchage := &Exchange{}
+		err := rows.Scan(
+			&exchage.ID,
+			&exchage.ReceivedMoney,
+			&exchage.ReceivedCurrency,
+			&exchage.SelledMoney,
+			&exchage.SelledCurrency,
+			&exchage.UserId,
+			&exchage.CompanyID,
+			&exchage.Details,
+			&exchage.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		exchanges = append(exchanges, *exchage)
+	}
+
+	return exchanges, nil
+}
+
+func (s *ExchangeStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Exchange, error) {
+	query := `
+				SELECT id, received_money, received_currency, selled_money,
+				selled_currency, user_id, company_id, details, created_at 
+				FROM exchanges WHERE status != $1 ` + fmt.Sprintf(" %v = %v ", fieldName, fieldValue)
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		STATUS_ARCHIVED,
 	)
 	if err != nil {
 		return nil, err

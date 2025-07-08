@@ -10,5 +10,6 @@ CREATE TABLE IF NOT EXISTS balance_records (
     details varchar(255) DEFAULT NULL,
     currency varchar(255),
     type bigint,
+    status bigint,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );

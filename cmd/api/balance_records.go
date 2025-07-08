@@ -103,3 +103,28 @@ func (app *application) DeleteBalanceRecordHandler(w http.ResponseWriter, r *htt
 		return
 	}
 }
+
+func (app *application) ArchiveBalanceRecordsHandler(w http.ResponseWriter, r *http.Request) {
+	if err := app.store.BalanceRecords.Archive(r.Context()); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "ARCHIVED"); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) ArchivedBalanceRecordsHandler(w http.ResponseWriter, r *http.Request) {
+	balanceRecords, err := app.store.BalanceRecords.Archived(r.Context())
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, balanceRecords); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}

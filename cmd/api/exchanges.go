@@ -104,3 +104,28 @@ func (app *application) DeleteExchangeHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 }
+
+func (app *application) ArchiveExchangesHandler(w http.ResponseWriter, r *http.Request) {
+	if err := app.store.Exchanges.Archive(r.Context()); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "ARCHIVED"); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) ArchivedExchangesHandler(w http.ResponseWriter, r *http.Request) {
+	Exchanges, err := app.store.Exchanges.Archived(r.Context())
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, Exchanges); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}

@@ -186,6 +186,31 @@ func (app *application) GetTransactionsByFieldAndDateHandler(w http.ResponseWrit
 	}
 }
 
+func (app *application) ArchiveTransactionsHandler(w http.ResponseWriter, r *http.Request) {
+	if err := app.store.Transactions.Archive(r.Context()); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "ARCHIVED"); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) ArchivedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
+	transactions, err := app.store.Transactions.Archived(r.Context())
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, transactions); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) DeleteTransactionHandler(w http.ResponseWriter, r *http.Request) {
 	id := getIDFromContext(r)
 	if err := app.service.Transactions.Delete(r.Context(), &id); err != nil {

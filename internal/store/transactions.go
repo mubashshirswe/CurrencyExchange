@@ -35,6 +35,25 @@ func NewTransactionStorage(db DBTX) *TransactionStorage {
 	return &TransactionStorage{db: db}
 }
 
+func (s *TransactionStorage) Archive(ctx context.Context) error {
+	query := `UPDATE transactions SET created_at = $1, status = $2 WHERE status = $3`
+	rows, err := s.db.ExecContext(ctx, query, time.Now(), STATUS_ARCHIVED, STATUS_COMPLETED)
+	if err != nil {
+		return err
+	}
+
+	res, err := rows.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if res == 0 {
+		return fmt.Errorf("TRANSACTION NOT FOUND")
+	}
+
+	return nil
+}
+
 func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error {
 	query := `
 			INSERT INTO transactions(
@@ -57,7 +76,7 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		tr.DeliveredUserId,
 		tr.Phone,
 		tr.Details,
-		tr.Status,
+		STATUS_CREATED,
 		tr.Type,
 	).Scan(
 		&tr.ID,
@@ -152,17 +171,34 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 	return tr, nil
 }
 
+func (s *TransactionStorage) Archived(ctx context.Context) ([]Transaction, error) {
+	query := `
+				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
+				FROM transactions WHERE status != $1 ORDER BY created_at DESC
+			`
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		STATUS_ARCHIVED,
+	)
+
+	return s.ConvertRowsToObject(rows, err)
+}
+
 func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Transaction, error) {
 	query := `
 				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 ORDER BY created_at DESC
+				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND status != $2 ORDER BY created_at DESC
 			`
 
 	rows, err := s.db.QueryContext(
 		ctx,
 		query,
 		fieldValue,
+		STATUS_ARCHIVED,
 	)
 
 	return s.ConvertRowsToObject(rows, err)
@@ -172,7 +208,7 @@ func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, f
 	query := `
 				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 ORDER BY created_at DESC
+				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 AND status != $4 ORDER BY created_at DESC
 			`
 
 	rows, err := s.db.QueryContext(
@@ -181,6 +217,7 @@ func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, f
 		fieldValue,
 		from,
 		to,
+		STATUS_ARCHIVED,
 	)
 
 	return s.ConvertRowsToObject(rows, err)

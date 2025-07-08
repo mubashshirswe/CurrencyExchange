@@ -28,6 +28,8 @@ type Storage struct {
 		GetById(context.Context, int64) (*Exchange, error)
 		GetByField(context.Context, string, any) ([]Exchange, error)
 		Delete(context.Context, int64) error
+		Archive(context.Context) error
+		Archived(context.Context) ([]Exchange, error)
 	}
 
 	Debtors interface {
@@ -65,6 +67,8 @@ type Storage struct {
 		GetByFieldAndDate(context.Context, string, *string, *string, any) ([]BalanceRecord, error)
 		Update(context.Context, *BalanceRecord) error
 		Delete(context.Context, int64) error
+		Archive(context.Context) error
+		Archived(context.Context) ([]BalanceRecord, error)
 	}
 
 	Transactions interface {
@@ -73,6 +77,8 @@ type Storage struct {
 		Delete(context.Context, *int64) error
 		GetByField(context.Context, string, any) ([]Transaction, error)
 		GetByFieldAndDate(context.Context, string, string, string, any) ([]Transaction, error)
+		Archive(context.Context) error
+		Archived(context.Context) ([]Transaction, error)
 	}
 
 	Companies interface {
