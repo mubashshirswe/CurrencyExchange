@@ -175,7 +175,7 @@ func (s *TransactionStorage) Archived(ctx context.Context) ([]Transaction, error
 	query := `
 				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE status != $1 ORDER BY created_at DESC
+				FROM transactions WHERE status = $1 ORDER BY created_at DESC
 			`
 
 	rows, err := s.db.QueryContext(
