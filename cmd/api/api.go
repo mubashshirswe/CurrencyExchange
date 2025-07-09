@@ -80,7 +80,8 @@ func (app *application) mount() *chi.Mux {
 			r.Route("/exchanges", func(r chi.Router) {
 				r.Post("/", app.CreateExchangeHandler)
 				r.Post("/filter", app.GetExchangesHandler)
-				r.Post("/archived", app.ArchivedExchangesHandler)
+				r.Post("/archive", app.ArchiveExchangesHandler)
+				r.Get("/archived", app.ArchivedExchangesHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Put("/", app.UpdateExchangeHandler)
 					r.Delete("/", app.DeleteExchangeHandler)
