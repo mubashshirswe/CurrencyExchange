@@ -34,6 +34,7 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		if balance.Balance >= debtor.ReceivedAmount {
 			balance.Balance -= debtor.ReceivedAmount
 			balance.InOutLay += debtor.ReceivedAmount
+			debtor.DebtedAmount -= debtor.DebtedAmount * 2
 		} else {
 			return fmt.Errorf("ERROR OCCURRED: BALANCE HAS NO ENOUGH MONEY TO OPERATE %v >= %v ", balance.Balance, debtor.ReceivedAmount)
 		}
@@ -56,10 +57,6 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 		Details:   debtor.Details,
 		Currency:  debtor.ReceivedCurrency,
 		DebtorId:  &debtor.ID,
-	}
-
-	if debtor.Type == TYPE_SELL {
-		debtor.DebtedAmount -= debtor.DebtedAmount * 2
 	}
 
 	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
