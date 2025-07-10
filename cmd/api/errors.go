@@ -11,7 +11,7 @@ func (app *application) internalServerError(w http.ResponseWriter, r *http.Reque
 	if err == sql.ErrNoRows {
 		writeError(w, http.StatusNotFound, err.Error())
 	} else {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		writeError(w, http.StatusBadRequest, err.Error())
 	}
 }
 
