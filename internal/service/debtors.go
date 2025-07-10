@@ -189,15 +189,10 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 	case TYPE_SELL:
 		balance.Balance += oldRecord.Amount
 		balance.InOutLay -= oldRecord.Amount
-
-		debtor.DebtedAmount += oldRecord.Amount
-
 	case TYPE_BUY:
 		if balance.Balance >= oldRecord.Amount {
 			balance.Balance -= oldRecord.Amount
 			balance.OutInLay -= oldRecord.Amount
-
-			debtor.DebtedAmount -= oldRecord.Amount
 		} else {
 			tx.Rollback()
 			return fmt.Errorf("BALANCE THAT IS ROLLBACKING HAS NO ENOUGH MONEY")
@@ -208,14 +203,12 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 	case TYPE_SELL:
 		balance.Balance -= record.Amount
 		balance.InOutLay += record.Amount
-
-		debtor.DebtedAmount += record.Amount
 	case TYPE_BUY:
 		balance.Balance += record.Amount
 		balance.OutInLay += record.Amount
-
-		debtor.DebtedAmount -= record.Amount
 	}
+
+	debtor.DebtedAmount = record.Amount
 
 	if err := balanceStorage.Update(ctx, balance); err != nil {
 		tx.Rollback()
