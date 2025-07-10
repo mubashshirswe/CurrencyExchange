@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type ExchangeService struct {
@@ -38,13 +39,13 @@ func (s *ExchangeService) Create(ctx context.Context, exchange *store.Exchange) 
 	receivedCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &exchange.UserId, exchange.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", exchange.ReceivedCurrency)
+		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
 	selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &exchange.UserId, exchange.SelledCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", exchange.SelledCurrency)
+		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
 	/// SELLED MONEY PERFORM
@@ -53,7 +54,7 @@ func (s *ExchangeService) Create(ctx context.Context, exchange *store.Exchange) 
 		selledCurrencyBalance.InOutLay += exchange.SelledMoney
 	} else {
 		tx.Rollback()
-		return fmt.Errorf("SELLED CURRENCY HAVE NO ENOUGH MONEY %v >= %v", selledCurrencyBalance.Balance, exchange.ReceivedCurrency)
+		return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 	}
 
 	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
@@ -147,7 +148,7 @@ func (s *ExchangeService) Update(ctx context.Context, exchange *store.Exchange) 
 				balance.OutInLay -= record.Amount
 			} else {
 				tx.Rollback()
-				return fmt.Errorf("oldRecord BALANCE  HAS NO ENOUGH MONEY")
+				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 			}
 		}
 
@@ -226,7 +227,7 @@ func (s *ExchangeService) Delete(ctx context.Context, id int64) error {
 				balance.Balance -= exchange.ReceivedMoney
 				balance.OutInLay -= exchange.ReceivedMoney
 			} else {
-				return fmt.Errorf("ReceivedCurrency BALANCE HAS NO ENOUGH MONEY")
+				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 			}
 		}
 

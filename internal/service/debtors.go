@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type DebtorsService struct {
@@ -36,7 +37,7 @@ func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) erro
 			balance.InOutLay += debtor.ReceivedAmount
 			debtor.DebtedAmount -= debtor.DebtedAmount * 2
 		} else {
-			return fmt.Errorf("ERROR OCCURRED: BALANCE HAS NO ENOUGH MONEY TO OPERATE %v >= %v ", balance.Balance, debtor.ReceivedAmount)
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	case TYPE_BUY:
 		balance.Balance += debtor.ReceivedAmount
@@ -112,7 +113,7 @@ func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors)
 			oldDebtor.DebtedAmount -= debtor.DebtedAmount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("ERROR OCCURRED: BALANCE HAS NO ENOUGH MONEY TO OPERATE %v >= %v ", balance.Balance, debtor.ReceivedAmount)
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	case TYPE_BUY:
 		balance.Balance += debtor.ReceivedAmount
@@ -192,7 +193,7 @@ func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord
 			balance.OutInLay -= oldRecord.Amount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("BALANCE THAT IS ROLLBACKING HAS NO ENOUGH MONEY")
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	}
 
@@ -269,7 +270,7 @@ func (s *DebtorsService) Delete(ctx context.Context, balanceRecordId int64) erro
 			debtor.DebtedAmount += record.Amount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE %v >= %v", balance.Balance, record.Amount)
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	}
 

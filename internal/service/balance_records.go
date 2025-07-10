@@ -31,13 +31,13 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 	receivedCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", balanceRecord.ReceivedCurrency)
+		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
 	selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
 	if err != nil {
 		tx.Rollback()
-		return fmt.Errorf("BALANCE WITH CURRENCY %v NOT FOUND", balanceRecord.SelledCurrency)
+		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
 	/// SELLED MONEY PEFPERFORMROM
@@ -46,7 +46,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
 	} else {
 		tx.Rollback()
-		return fmt.Errorf("SELLED CURRENCY HAVE NO ENOUGH MONEY %v >= %v", selledCurrencyBalance.Balance, balanceRecord.ReceivedCurrency)
+		return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 	}
 
 	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
@@ -131,7 +131,7 @@ func (s *BalanceRecordService) RollbackBalanceRecord(ctx context.Context, id int
 			balance.OutInLay -= record.Amount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO ROLLBACK TRANSACTION %v >= %v", balance.Balance, record.Amount)
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	default:
 		tx.Rollback()
@@ -185,7 +185,7 @@ func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord s
 
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("oldRecord BALANCE  HAS NO ENOUGH MONEY")
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	}
 
@@ -196,7 +196,7 @@ func (s *BalanceRecordService) UpdateRecord(ctx context.Context, balanceRecord s
 			balance.InOutLay += balanceRecord.Amount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("balanceRecord BALANCE  HAS NO ENOUGH MONEY")
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	case TYPE_BUY:
 		balance.Balance += balanceRecord.Amount

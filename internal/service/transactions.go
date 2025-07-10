@@ -47,7 +47,7 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 			balance.InOutLay += transaction.ReceivedAmount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THIS %v", err)
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	case TYPE_BUY:
 		balance.Balance += transaction.ReceivedAmount
@@ -120,7 +120,7 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 			balance.InOutLay += tran.ReceivedAmount
 		} else {
 			tx.Rollback()
-			return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THIS ACTION")
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 	}
 
@@ -188,7 +188,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				balance.OutInLay -= record.Amount
 			} else {
 				tx.Rollback()
-				return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY")
+				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 			}
 		}
 
@@ -311,7 +311,7 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 				balance.OutInLay -= record.Amount
 			} else {
 				tx.Rollback()
-				return fmt.Errorf("BALANCE HAS NO ENOUGH MONEY TO OPERATE THE ACTION")
+				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 			}
 		}
 		if err := balancesStorage.Create(ctx, balance); err != nil {
