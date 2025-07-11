@@ -42,6 +42,33 @@ func (s *ExchangeService) Create(ctx context.Context, exchange *store.Exchange) 
 		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
+	// RECEIVED MONEY PERFORM
+	if receivedCurrencyBalance != nil {
+		receivedCurrencyBalance.Balance += exchange.ReceivedMoney
+		receivedCurrencyBalance.OutInLay += exchange.ReceivedMoney
+	}
+
+	if err := balancesStorage.Update(ctx, receivedCurrencyBalance); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING receivedCurrencyBalance %v", err)
+	}
+
+	receivedMoneyRecord := &store.BalanceRecord{
+		Amount:     exchange.ReceivedMoney,
+		Currency:   exchange.ReceivedCurrency,
+		CompanyID:  user.CompanyId,
+		BalanceID:  receivedCurrencyBalance.ID,
+		Details:    exchange.Details,
+		UserID:     exchange.UserId,
+		Type:       TYPE_BUY,
+		ExchangeId: &exchange.ID,
+	}
+
+	if err := balanceRecordsStorage.Create(ctx, receivedMoneyRecord); err != nil {
+		tx.Rollback()
+		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+	}
+
 	selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &exchange.UserId, exchange.SelledCurrency)
 	if err != nil {
 		tx.Rollback()
@@ -78,33 +105,6 @@ func (s *ExchangeService) Create(ctx context.Context, exchange *store.Exchange) 
 		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
 	}
 
-	// RECEIVED MONEY PERFORM
-	if receivedCurrencyBalance != nil {
-		receivedCurrencyBalance.Balance += exchange.ReceivedMoney
-		receivedCurrencyBalance.OutInLay += exchange.ReceivedMoney
-	}
-
-	if err := balancesStorage.Update(ctx, receivedCurrencyBalance); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING receivedCurrencyBalance %v", err)
-	}
-
-	receivedMoneyRecord := &store.BalanceRecord{
-		Amount:     exchange.ReceivedMoney,
-		Currency:   exchange.ReceivedCurrency,
-		CompanyID:  user.CompanyId,
-		BalanceID:  receivedCurrencyBalance.ID,
-		Details:    exchange.Details,
-		UserID:     exchange.UserId,
-		Type:       TYPE_BUY,
-		ExchangeId: &exchange.ID,
-	}
-
-	if err := balanceRecordsStorage.Create(ctx, receivedMoneyRecord); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
-	}
-
 	tx.Commit()
 	return nil
 }
@@ -114,6 +114,7 @@ func (s *ExchangeService) Update(ctx context.Context, exchange *store.Exchange) 
 	if err != nil {
 		return err
 	}
+	defer tx.Rollback()
 
 	exchangeStorage := store.NewExchangeStorage(tx)
 	balancesStorage := store.NewBalanceStorage(tx)
@@ -127,29 +128,26 @@ func (s *ExchangeService) Update(ctx context.Context, exchange *store.Exchange) 
 
 	records, err := balanceRecordsStorage.GetByField(ctx, "exchange_id", exchange.ID)
 	if err != nil {
-		tx.Rollback()
 		return err
 	}
 
 	for _, record := range records {
 		balance, err := balancesStorage.GetById(ctx, &record.BalanceID)
 		if err != nil {
-			tx.Rollback()
 			return err
 		}
 
 		switch record.Type {
-		case TYPE_SELL:
-			balance.Balance += record.Amount
-			balance.InOutLay -= record.Amount
 		case TYPE_BUY:
 			if balance.Balance >= record.Amount {
 				balance.Balance -= record.Amount
 				balance.OutInLay -= record.Amount
 			} else {
-				tx.Rollback()
 				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 			}
+		case TYPE_SELL:
+			balance.Balance += record.Amount
+			balance.InOutLay -= record.Amount
 		}
 
 		if record.Type == TYPE_BUY {
@@ -169,18 +167,15 @@ func (s *ExchangeService) Update(ctx context.Context, exchange *store.Exchange) 
 		}
 
 		if err := balancesStorage.Update(ctx, balance); err != nil {
-			tx.Rollback()
 			return fmt.Errorf("ERROR OCCURRED WHILE UPDATING BALANCE %v", err)
 		}
 
 		if err := balanceRecordsStorage.Update(ctx, &record); err != nil {
-			tx.Rollback()
 			return err
 		}
 	}
 
 	if err := exchangeStorage.Update(ctx, exchange); err != nil {
-		tx.Rollback()
 		return err
 	}
 

@@ -227,7 +227,7 @@ func (s *DebtorsStorage) Update(ctx context.Context, credit *Debtors) error {
 }
 
 func (s *DebtorsStorage) Delete(ctx context.Context, id int64) error {
-	query := `DELETE FROM debtors  WHERE id = $1`
+	query := `DELETE FROM debtors WHERE id = $1 and balance = 0`
 
 	rows, err := s.db.ExecContext(
 		ctx,
