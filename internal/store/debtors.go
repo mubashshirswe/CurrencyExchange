@@ -194,7 +194,7 @@ func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error
 
 func (s *DebtorsStorage) Update(ctx context.Context, credit *Debtors) error {
 	query := `
-				UPDATE debtors SET balance = $1, currency = $2, user_id = $3, phone = $4, full_name = $5
+				UPDATE debtors SET balance = $1, currency = $2, user_id = $3, phone = $4, full_name = $5,
 				company_id = $6 WHERE id = $7
 			`
 
@@ -227,7 +227,7 @@ func (s *DebtorsStorage) Update(ctx context.Context, credit *Debtors) error {
 }
 
 func (s *DebtorsStorage) Delete(ctx context.Context, id int64) error {
-	query := `UPDATE debtors SET status = -1 WHERE id = $1`
+	query := `DELETE FROM debtors  WHERE id = $1`
 
 	rows, err := s.db.ExecContext(
 		ctx,

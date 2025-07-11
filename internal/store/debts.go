@@ -129,6 +129,58 @@ func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]D
 	return credits, nil
 }
 
+func (s *DebtsStorage) GetByDebtorId(ctx context.Context, debtorId int64) ([]Debts, error) {
+	query := `
+				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				FROM debts WHERE debtor_id = $1 
+			`
+
+	var credits []Debts
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		debtorId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var credit Debts
+		err := rows.Scan(
+			&credit.ID,
+			&credit.ReceivedAmount,
+			&credit.ReceivedCurrency,
+			&credit.DebtedAmount,
+			&credit.DebtedCurrency,
+			&credit.UserID,
+			&credit.Details,
+			&credit.Phone,
+			&credit.IsBalanceEffect,
+			&credit.Type,
+			&credit.CreatedAt,
+			&credit.CompanyID,
+			&credit.DebtorId,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := credit.CreatedAt.In(loc)
+		credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
+
+		credits = append(credits, credit)
+
+	}
+
+	return credits, nil
+}
+
 func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
@@ -185,7 +237,7 @@ func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
 				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
-				FROM debts WHERE id = $1 and status != -1
+				FROM debts WHERE id = $1
 			`
 
 	fmt.Printf("GetById ID %v", id)
@@ -262,7 +314,7 @@ func (s *DebtsStorage) Update(ctx context.Context, credit *Debts) error {
 }
 
 func (s *DebtsStorage) Delete(ctx context.Context, id int64) error {
-	query := `UPDATE debtors SET status = -1 WHERE id = $1`
+	query := `DELETE FROM debts WHERE id = $1`
 
 	rows, err := s.db.ExecContext(
 		ctx,
@@ -280,7 +332,7 @@ func (s *DebtsStorage) Delete(ctx context.Context, id int64) error {
 	}
 
 	if res == 0 {
-		return fmt.Errorf("DEBTORS NOT FOUND")
+		return fmt.Errorf("DEBT NOT FOUND")
 	}
 
 	return nil

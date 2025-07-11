@@ -46,7 +46,7 @@ type Storage struct {
 		Update(context.Context, *Debts) error
 		GetById(context.Context, int64) (*Debts, error)
 		GetByUserId(context.Context, int64) ([]Debts, error)
-		GetByCompanyId(context.Context, int64) ([]Debts, error)
+		GetByDebtorId(context.Context, int64) ([]Debts, error)
 		Delete(context.Context, int64) error
 	}
 

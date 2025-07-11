@@ -68,8 +68,8 @@ func (app *application) CreateDebtorTransactionHandler(w http.ResponseWriter, r 
 	}
 }
 
-func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
-	var payload DebtorPayload
+func (app *application) UpdateDebtsHandler(w http.ResponseWriter, r *http.Request) {
+	var payload *store.Debts
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -87,6 +87,7 @@ func (app *application) UpdateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 		Phone:            payload.Phone,
 		IsBalanceEffect:  payload.IsBalanceEffect,
 		Type:             payload.Type,
+		DebtorId:         payload.DebtorId,
 	}
 
 	if err := app.service.Debts.Update(r.Context(), debt); err != nil {
@@ -113,6 +114,19 @@ func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *h
 	}
 }
 
+func (app *application) GetDebtsByDebtorIdHandler(w http.ResponseWriter, r *http.Request) {
+	debtors, err := app.store.Debts.GetByDebtorId(r.Context(), getIDFromContext(r))
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, debtors); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) GetDebtorsByIdHandler(w http.ResponseWriter, r *http.Request) {
 	debtors, err := app.store.Debtors.GetById(r.Context(), getIDFromContext(r))
 	if err != nil {
@@ -126,10 +140,24 @@ func (app *application) GetDebtorsByIdHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (app *application) DeleteDebtorsHandler(w http.ResponseWriter, r *http.Request) {
+func (app *application) DeleteDebtsHandler(w http.ResponseWriter, r *http.Request) {
 	id := getIDFromContext(r)
 
 	if err := app.service.Debts.Delete(r.Context(), id); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, "DELETED"); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) DeleteDebtorsHandler(w http.ResponseWriter, r *http.Request) {
+	id := getIDFromContext(r)
+
+	if err := app.store.Debtors.Delete(r.Context(), id); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

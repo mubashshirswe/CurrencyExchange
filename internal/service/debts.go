@@ -113,6 +113,8 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 	}
 
 	debt.CompanyID = balance.CompanyId
+	debtor.CompanyID = balance.CompanyId
+
 	switch debt.Type {
 	case TYPE_SELL:
 		if balance.Balance >= debt.ReceivedAmount {
@@ -130,6 +132,10 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 		debtor.Balance += debt.DebtedAmount
 	}
 
+	if err := debtsStorage.Create(ctx, debt); err != nil {
+		return fmt.Errorf("ERROR OCCURRED WHILE debtsStorage.Create %v", err)
+	}
+
 	record := &store.BalanceRecord{
 		Amount:    debt.ReceivedAmount,
 		UserID:    debt.UserID,
@@ -145,16 +151,12 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
 	}
 
-	if err := debtsStorage.Create(ctx, debt); err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
-	}
-
 	if err := debtorsStorage.Update(ctx, debtor); err != nil {
 		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
 	}
 
 	if err := balancesStorage.Update(ctx, balance); err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE Debtors.Update %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Update %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -177,17 +179,17 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 
 	old, err := debtsStorage.GetById(ctx, debt.ID)
 	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.GetByField %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE debtsStorage.GetById %v", err)
 	}
 
 	debtor, err := debtorsStorage.GetById(ctx, old.DebtorId)
 	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE debtsStorage.GetById %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE debtorsStorage.GetById %v", err)
 	}
 
 	balance, err := balanceStorage.GetByUserIdAndCurrency(ctx, &debtor.UserID, debtor.Currency)
 	if err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE balanceStorage.GetById %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceStorage.GetByUserIdAndCurrency %v", err)
 	}
 
 	debt.CompanyID = balance.CompanyId
@@ -229,8 +231,8 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 		debtor.Balance += debt.DebtedAmount
 	}
 
-	if err := debtsStorage.Create(ctx, debt); err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Update %v", err)
+	if err := debtsStorage.Update(ctx, debt); err != nil {
+		return fmt.Errorf("ERROR OCCURRED debtsStorage.Create( %v", err)
 	}
 
 	record := &store.BalanceRecord{
@@ -245,11 +247,11 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 	}
 
 	if err := balanceRecordsStorage.DeleteByDebtId(ctx, old.ID); err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Update %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.DeleteByDebtId %v", err)
 	}
 
 	if err := balanceRecordsStorage.Create(ctx, record); err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Update %v", err)
+		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Create %v", err)
 	}
 
 	if err := debtorsStorage.Update(ctx, debtor); err != nil {
@@ -315,6 +317,10 @@ func (s *DebtsService) Delete(ctx context.Context, debtId int64) error {
 	}
 
 	if err := debtorsStorage.Update(ctx, debtor); err != nil {
+		return err
+	}
+
+	if err := debtsStorage.Delete(ctx, debtId); err != nil {
 		return err
 	}
 
