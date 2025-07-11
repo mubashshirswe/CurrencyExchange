@@ -216,11 +216,7 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 		if balance.Balance >= debt.DebtedAmount {
 			balance.Balance -= debt.DebtedAmount
 			balance.InOutLay += debt.DebtedAmount
-			if debtor.Balance >= debt.DebtedAmount {
-				debtor.Balance -= debt.DebtedAmount
-			} else {
-				return fmt.Errorf(types.DEBTOR_NO_ENOUGH_MONEY)
-			}
+			debtor.Balance -= debt.DebtedAmount
 		} else {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
