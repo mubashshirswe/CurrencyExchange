@@ -20,11 +20,10 @@ type Service struct {
 		GetByCompanyId(context.Context, int64) ([]map[string]interface{}, error)
 	}
 
-	Debtors interface {
-		Create(context.Context, *store.Debtors) error
-		Transaction(context.Context, *store.Debtors) error
-		GetByCompanyId(context.Context, int64) (map[string]interface{}, error)
-		Update(context.Context, *store.BalanceRecord) error
+	Debts interface {
+		Create(context.Context, *store.Debts) error
+		Transaction(context.Context, *store.Debts) error
+		Update(context.Context, *store.Debts) error
 		Delete(context.Context, int64) error
 	}
 	BalanceRecords interface {
@@ -49,7 +48,7 @@ func NewService(store store.Storage) Service {
 		Exchanges:      &ExchangeService{store: store},
 		BalanceRecords: &BalanceRecordService{store: store},
 		Transactions:   &TransactionService{store: store},
-		// Debtors:        &DebtorsService{store: store},
+		Debts:          &DebtsService{store: store},
 	}
 }
 

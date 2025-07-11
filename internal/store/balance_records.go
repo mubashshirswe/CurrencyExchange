@@ -9,19 +9,20 @@ import (
 )
 
 type BalanceRecord struct {
-	ID            int64   `json:"id"`
-	Amount        int64   `json:"amount"`
-	UserID        int64   `json:"user_id"`
-	BalanceID     int64   `json:"balance_id"`
-	CompanyID     int64   `json:"company_id"`
-	TransactionId *int64  `json:"transaction_id"`
-	DebtorId      *int64  `json:"debtor_id"`
-	ExchangeId    *int64  `json:"exchange_id"`
-	Details       *string `json:"details"`
-	Currency      string  `json:"currency"`
-	Type          int64   `json:"type"`
-	Status        int64   `json:"status"`
-	CreatedAt     string  `json:"created_at"`
+	ID                 int64     `json:"id"`
+	Amount             int64     `json:"amount"`
+	UserID             int64     `json:"user_id"`
+	BalanceID          int64     `json:"balance_id"`
+	CompanyID          int64     `json:"company_id"`
+	TransactionId      *int64    `json:"transaction_id"`
+	DebtId             *int64    `json:"debt_id"`
+	ExchangeId         *int64    `json:"exchange_id"`
+	Details            *string   `json:"details"`
+	Currency           string    `json:"currency"`
+	Type               int64     `json:"type"`
+	Status             int64     `json:"status"`
+	CreatedAt          time.Time `json:"-"`
+	CreatedAtFormatted string    `json:"created_at"`
 }
 
 type BalanceRecordStorage struct {
@@ -55,7 +56,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 	query := `
 		INSERT INTO balance_records (
 			amount, user_id, balance_id, company_id,
-			transaction_id, debtor_id, exchange_id,
+			transaction_id, debt_id, exchange_id,
 			details, currency, type, status
 		)
 		VALUES (
@@ -75,7 +76,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.BalanceID,
 		balanceRecord.CompanyID,
 		balanceRecord.TransactionId,
-		balanceRecord.DebtorId,
+		balanceRecord.DebtId,
 		balanceRecord.ExchangeId,
 		balanceRecord.Details,
 		balanceRecord.Currency,
@@ -92,7 +93,7 @@ func (s *BalanceRecordStorage) Create(ctx context.Context, balanceRecord *Balanc
 
 func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *BalanceRecord) error {
 	query := `
-				UPDATE balance_records SET amount = $1, user_id = $2, balance_id = $3, company_id = $4, transaction_id = $5, debtor_id = $6,  
+				UPDATE balance_records SET amount = $1, user_id = $2, balance_id = $3, company_id = $4, transaction_id = $5, debt_id = $6,  
 				details = $7, currency = $8, type = $9, exchange_id = $10 WHERE id = $11
 			`
 
@@ -104,7 +105,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 		balanceRecord.BalanceID,
 		balanceRecord.CompanyID,
 		balanceRecord.TransactionId,
-		balanceRecord.DebtorId,
+		balanceRecord.DebtId,
 		balanceRecord.Details,
 		balanceRecord.Currency,
 		balanceRecord.Type,
@@ -117,7 +118,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 
 func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName string, from, to *string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
-				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type, created_at
+				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
 				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 AND created_at BETWEEN $3 AND $4 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
@@ -139,7 +140,7 @@ func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName 
 
 func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
-				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type, created_at
+				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
 				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
@@ -159,7 +160,7 @@ func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string,
 
 func (s *BalanceRecordStorage) Archived(ctx context.Context) ([]BalanceRecord, error) {
 	query := `
-				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debtor_id, exchange_id, details, currency, type, created_at
+				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
 				FROM balance_records WHERE status = $1 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
@@ -188,7 +189,7 @@ func (s *BalanceRecordStorage) FetchDataFromQuery(rows *sql.Rows) ([]BalanceReco
 			&balance.BalanceID,
 			&balance.CompanyID,
 			&balance.TransactionId,
-			&balance.DebtorId,
+			&balance.DebtId,
 			&balance.ExchangeId,
 			&balance.Details,
 			&balance.Currency,
@@ -200,9 +201,9 @@ func (s *BalanceRecordStorage) FetchDataFromQuery(rows *sql.Rows) ([]BalanceReco
 			return nil, err
 		}
 
-		// loc, _ := time.LoadLocation("Asia/Tashkent")
-		// createdAtInTashkent := balance.CreatedAt.In(loc)
-		// balance.CreatedAt = createdAtInTashkent
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := balance.CreatedAt.In(loc)
+		balance.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 		balanceRecords = append(balanceRecords, balance)
 	}
@@ -224,6 +225,18 @@ func (s *BalanceRecordStorage) Delete(ctx context.Context, id int64) error {
 
 func (s *BalanceRecordStorage) DeleteByExchangeId(ctx context.Context, id int64) error {
 	query := `DELETE FROM balance_records WHERE exchange_id = $1`
+
+	_, err := s.db.ExecContext(
+		ctx,
+		query,
+		id,
+	)
+
+	return err
+}
+
+func (s *BalanceRecordStorage) DeleteByDebtId(ctx context.Context, id int64) error {
+	query := `DELETE FROM balance_records WHERE debt_id = $1`
 
 	_, err := s.db.ExecContext(
 		ctx,

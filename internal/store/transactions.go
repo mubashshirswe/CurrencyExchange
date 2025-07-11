@@ -24,7 +24,8 @@ type Transaction struct {
 	Details             string    `json:"details"`
 	Status              int64     `json:"status"`
 	Type                int64     `json:"type"`
-	CreatedAt           time.Time `json:"created_at"`
+	CreatedAt           time.Time `json:"-"`
+	CreatedAtFormatted  string    `json:"created_at"`
 }
 
 type TransactionStorage struct {
@@ -168,6 +169,10 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 		return nil, err
 	}
 
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := tr.CreatedAt.In(loc)
+	tr.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
+
 	return tr, nil
 }
 
@@ -282,7 +287,7 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 
 		loc, _ := time.LoadLocation("Asia/Tashkent")
 		createdAtInTashkent := tr.CreatedAt.In(loc)
-		tr.CreatedAt = createdAtInTashkent
+		tr.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 		transactions = append(transactions, *tr)
 	}

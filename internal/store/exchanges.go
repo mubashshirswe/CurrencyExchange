@@ -7,16 +7,17 @@ import (
 )
 
 type Exchange struct {
-	ID               int64   `json:"id"`
-	ReceivedMoney    int64   `json:"received_money"`
-	ReceivedCurrency string  `json:"received_currency"`
-	SelledMoney      int64   `json:"selled_money"`
-	SelledCurrency   string  `json:"selled_currency"`
-	UserId           int64   `json:"user_id"`
-	Details          *string `json:"details"`
-	CompanyID        int64   `json:"company_id"`
-	Status           int64   `json:"status"`
-	CreatedAt        *string `json:"created_at"`
+	ID                 int64     `json:"id"`
+	ReceivedMoney      int64     `json:"received_money"`
+	ReceivedCurrency   string    `json:"received_currency"`
+	SelledMoney        int64     `json:"selled_money"`
+	SelledCurrency     string    `json:"selled_currency"`
+	UserId             int64     `json:"user_id"`
+	Details            *string   `json:"details"`
+	CompanyID          int64     `json:"company_id"`
+	Status             int64     `json:"status"`
+	CreatedAt          time.Time `json:"-"`
+	CreatedAtFormatted string    `json:"created_at"`
 }
 
 type ExchangeStorage struct {
@@ -136,6 +137,10 @@ func (s *ExchangeStorage) Archived(ctx context.Context) ([]Exchange, error) {
 			return nil, err
 		}
 
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := exchage.CreatedAt.In(loc)
+		exchage.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
+
 		exchanges = append(exchanges, *exchage)
 	}
 
@@ -176,6 +181,10 @@ func (s *ExchangeStorage) GetByField(ctx context.Context, fieldName string, fiel
 			return nil, err
 		}
 
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := exchage.CreatedAt.In(loc)
+		exchage.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
+
 		exchanges = append(exchanges, *exchage)
 	}
 
@@ -209,6 +218,10 @@ func (s *ExchangeStorage) GetById(ctx context.Context, id int64) (*Exchange, err
 	if err != nil {
 		return nil, err
 	}
+
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := exchage.CreatedAt.In(loc)
+	exchage.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 	return exchage, nil
 }

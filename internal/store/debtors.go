@@ -3,16 +3,19 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type Debtors struct {
-	ID        int64   `json:"id"`
-	Balance   int64   `json:"balance"`
-	Currency  string  `json:"currency"`
-	UserID    int64   `json:"user_id"`
-	CompanyID int64   `json:"company_id"`
-	Phone     *string `json:"phone"`
-	CreatedAt string  `json:"created_at"`
+	ID                 int64     `json:"id"`
+	Balance            int64     `json:"balance"`
+	Currency           string    `json:"currency"`
+	UserID             int64     `json:"user_id"`
+	CompanyID          int64     `json:"company_id"`
+	Phone              *string   `json:"phone"`
+	FullName           string    `json:"full_name"`
+	CreatedAt          time.Time `json:"-"`
+	CreatedAtFormatted string    `json:"created_at"`
 }
 
 /*
@@ -37,8 +40,8 @@ func NewDebtorsStorage(db DBTX) *DebtorsStorage {
 
 func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	query := `
-				INSERT INTO debtors (balance, currency, user_id, phone, company_id)
-				VALUES($1, $2, $3, $4, $5) RETURNING id, created_at
+				INSERT INTO debtors (balance, currency, user_id, phone, company_id, full_name)
+				VALUES($1, $2, $3, $4, $5, $6) RETURNING id, created_at
 			`
 
 	err := s.db.QueryRowContext(
@@ -49,6 +52,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 		credits.UserID,
 		credits.Phone,
 		credits.CompanyID,
+		credits.FullName,
 	).Scan(
 		&credits.ID,
 		&credits.CreatedAt,
@@ -63,7 +67,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 
 func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]Debtors, error) {
 	query := `
-				SELECT id, balance, currency, user_id, phone, company_id, created_at
+				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
 				FROM debtors WHERE company_id = $1
 			`
 
@@ -87,13 +91,18 @@ func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([
 			&credit.Currency,
 			&credit.UserID,
 			&credit.Phone,
-			&credit.CreatedAt,
 			&credit.CompanyID,
+			&credit.CreatedAt,
+			&credit.FullName,
 		)
 
 		if err != nil {
 			return nil, err
 		}
+
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := credit.CreatedAt.In(loc)
+		credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 		credits = append(credits, credit)
 
@@ -104,7 +113,7 @@ func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([
 
 func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debtors, error) {
 	query := `
-				SELECT id, balance, currency, user_id, phone, company_id, created_at
+				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
 				FROM debtors WHERE user_id = $1
 			`
 
@@ -128,13 +137,18 @@ func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debto
 			&credit.Currency,
 			&credit.UserID,
 			&credit.Phone,
-			&credit.CreatedAt,
 			&credit.CompanyID,
+			&credit.CreatedAt,
+			&credit.FullName,
 		)
 
 		if err != nil {
 			return nil, err
 		}
+
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := credit.CreatedAt.In(loc)
+		credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 		credits = append(credits, credit)
 
@@ -145,7 +159,7 @@ func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debto
 
 func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error) {
 	query := `
-				SELECT id, balance, currency, user_id, phone, company_id, created_at
+				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
 				FROM debtors WHERE id = $1
 			`
 
@@ -162,21 +176,26 @@ func (s *DebtorsStorage) GetById(ctx context.Context, id int64) (*Debtors, error
 		&credit.Currency,
 		&credit.UserID,
 		&credit.Phone,
-		&credit.CreatedAt,
 		&credit.CompanyID,
+		&credit.CreatedAt,
+		&credit.FullName,
 	)
 
 	if err != nil {
 		return nil, err
 	}
 
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := credit.CreatedAt.In(loc)
+	credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
+
 	return credit, nil
 }
 
 func (s *DebtorsStorage) Update(ctx context.Context, credit *Debtors) error {
 	query := `
-				UPDATE debtors SET balance = $1, currency = $2, user_id = $3, phone = $4, 
-				company_id = $5 WHERE id = $6
+				UPDATE debtors SET balance = $1, currency = $2, user_id = $3, phone = $4, full_name = $5
+				company_id = $6 WHERE id = $7
 			`
 
 	rows, err := s.db.ExecContext(
@@ -186,6 +205,7 @@ func (s *DebtorsStorage) Update(ctx context.Context, credit *Debtors) error {
 		&credit.Currency,
 		&credit.UserID,
 		&credit.Phone,
+		&credit.FullName,
 		&credit.CompanyID,
 		credit.ID,
 	)

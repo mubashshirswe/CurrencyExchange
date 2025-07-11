@@ -389,12 +389,12 @@ func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64
 func (s *TransactionService) GetInfos(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
 	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ERROR OCCURRED WHILE Transactions.GetByField %v", err)
 	}
 
 	balances, err := s.store.Balances.GetByCompanyId(ctx, &companyId)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByCompanyId %v", err)
 	}
 
 	var response []map[string]interface{}

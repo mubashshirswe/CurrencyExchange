@@ -3,22 +3,25 @@ package store
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 type Debts struct {
-	ID               int64   `json:"id"`
-	ReceivedAmount   int64   `json:"received_amount"`
-	ReceivedCurrency string  `json:"received_currency"`
-	DebtedAmount     int64   `json:"debted_amount"`
-	DebtedCurrency   string  `json:"debted_currency"`
-	UserID           int64   `json:"user_id"`
-	CompanyID        int64   `json:"company_id"`
-	Details          *string `json:"details"`
-	Phone            *string `json:"phone"`
-	IsBalanceEffect  int     `json:"is_balance_effect"`
-	Type             int     `json:"type"`
-	Status           int     `json:"status"`
-	CreatedAt        string  `json:"created_at"`
+	ID                 int64     `json:"id"`
+	FullName           string    `json:"full_name"`
+	ReceivedAmount     int64     `json:"received_amount"`
+	ReceivedCurrency   string    `json:"received_currency"`
+	DebtedAmount       int64     `json:"debted_amount"`
+	DebtedCurrency     string    `json:"debted_currency"`
+	UserID             int64     `json:"user_id"`
+	CompanyID          int64     `json:"company_id"`
+	DebtorId           int64     `json:"debtor_id"`
+	Details            *string   `json:"details"`
+	Phone              *string   `json:"phone"`
+	IsBalanceEffect    int       `json:"is_balance_effect"`
+	Type               int       `json:"type"`
+	CreatedAt          time.Time `json:"-"`
+	CreatedAtFormatted string    `json:"created_at"`
 }
 
 /*
@@ -44,7 +47,7 @@ func NewDebtsStorage(db DBTX) *DebtsStorage {
 func (s *DebtsStorage) Create(ctx context.Context, credits *Debts) error {
 	query := `
 				INSERT INTO debts (received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status, company_id)
+				details, phone, is_balance_effect, type, company_id, debtor_id)
 				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at
 			`
 
@@ -60,8 +63,8 @@ func (s *DebtsStorage) Create(ctx context.Context, credits *Debts) error {
 		credits.Phone,
 		credits.IsBalanceEffect,
 		credits.Type,
-		credits.Status,
 		credits.CompanyID,
+		credits.DebtorId,
 	).Scan(
 		&credits.ID,
 		&credits.CreatedAt,
@@ -77,8 +80,8 @@ func (s *DebtsStorage) Create(ctx context.Context, credits *Debts) error {
 func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status, created_at, company_id
-				FROM debts WHERE company_id = $1 and status != -1
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				FROM debts WHERE company_id = $1 
 			`
 
 	var credits []Debts
@@ -106,14 +109,18 @@ func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]D
 			&credit.Phone,
 			&credit.IsBalanceEffect,
 			&credit.Type,
-			&credit.Status,
 			&credit.CreatedAt,
 			&credit.CompanyID,
+			&credit.DebtorId,
 		)
 
 		if err != nil {
 			return nil, err
 		}
+
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := credit.CreatedAt.In(loc)
+		credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 		credits = append(credits, credit)
 
@@ -125,8 +132,8 @@ func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]D
 func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status, created_at, company_id
-				FROM debts WHERE user_id = $1 and status != -1
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				FROM debts WHERE user_id = $1
 			`
 
 	var credits []Debts
@@ -154,14 +161,18 @@ func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, 
 			&credit.Phone,
 			&credit.IsBalanceEffect,
 			&credit.Type,
-			&credit.Status,
 			&credit.CreatedAt,
 			&credit.CompanyID,
+			&credit.DebtorId,
 		)
 
 		if err != nil {
 			return nil, err
 		}
+
+		loc, _ := time.LoadLocation("Asia/Tashkent")
+		createdAtInTashkent := credit.CreatedAt.In(loc)
+		credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 		credits = append(credits, credit)
 
@@ -173,7 +184,7 @@ func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, 
 func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, status, created_at, company_id
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
 				FROM debts WHERE id = $1 and status != -1
 			`
 
@@ -195,10 +206,14 @@ func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 		&credit.Phone,
 		&credit.IsBalanceEffect,
 		&credit.Type,
-		&credit.Status,
 		&credit.CreatedAt,
 		&credit.CompanyID,
+		&credit.DebtorId,
 	)
+
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	createdAtInTashkent := credit.CreatedAt.In(loc)
+	credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
 
 	if err != nil {
 		return nil, err
@@ -210,23 +225,23 @@ func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 func (s *DebtsStorage) Update(ctx context.Context, credit *Debts) error {
 	query := `
 				UPDATE debts SET received_amount = $1, received_currency = $2, debted_amount = $3, debted_currency = $4, 
-				user_id = $5, details = $6, phone = $7, is_balance_effect = $8, type = $9, status = $10, company_id = $11 WHERE id = $12 and status != -1
+				user_id = $5, details = $6, phone = $7, is_balance_effect = $8, type = $9, company_id = $10, debtor_id = $11  WHERE id = $12
 			`
 
 	rows, err := s.db.ExecContext(
 		ctx,
 		query,
-		credit.ReceivedAmount,
-		credit.ReceivedCurrency,
-		credit.DebtedAmount,
-		credit.DebtedCurrency,
-		credit.UserID,
-		credit.Details,
-		credit.Phone,
-		credit.IsBalanceEffect,
-		credit.Type,
-		credit.Status,
-		credit.CompanyID,
+		&credit.ReceivedAmount,
+		&credit.ReceivedCurrency,
+		&credit.DebtedAmount,
+		&credit.DebtedCurrency,
+		&credit.UserID,
+		&credit.Details,
+		&credit.Phone,
+		&credit.IsBalanceEffect,
+		&credit.Type,
+		&credit.CompanyID,
+		&credit.DebtorId,
 		credit.ID,
 	)
 

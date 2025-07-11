@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS balance_records (
     company_id bigint REFERENCES companies(id),
     exchange_id bigint default null REFERENCES exchanges(id),
     transaction_id bigint default null REFERENCES transactions(id),
-    debtor_id bigint default null REFERENCES debtors(id),
+    debt_id bigint default null REFERENCES debts(id),
     details varchar(255) DEFAULT NULL,
     currency varchar(255),
     type bigint,
