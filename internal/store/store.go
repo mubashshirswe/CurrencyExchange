@@ -41,6 +41,15 @@ type Storage struct {
 		Delete(context.Context, int64) error
 	}
 
+	Debts interface {
+		Create(context.Context, *Debts) error
+		Update(context.Context, *Debts) error
+		GetById(context.Context, int64) (*Debts, error)
+		GetByUserId(context.Context, int64) ([]Debts, error)
+		GetByCompanyId(context.Context, int64) ([]Debts, error)
+		Delete(context.Context, int64) error
+	}
+
 	Users interface {
 		Login(context.Context, *User) error
 		Create(context.Context, *User) error
@@ -95,6 +104,7 @@ func NewStorage(db *sql.DB) Storage {
 
 	return Storage{
 		DB:             db,
+		Debts:          &DebtsStorage{db: dbwrapper},
 		Exchanges:      &ExchangeStorage{db: dbwrapper},
 		Debtors:        &DebtorsStorage{db: dbwrapper},
 		Users:          &UserStorage{db: dbwrapper},

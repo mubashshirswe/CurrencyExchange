@@ -49,7 +49,7 @@ func NewService(store store.Storage) Service {
 		Exchanges:      &ExchangeService{store: store},
 		BalanceRecords: &BalanceRecordService{store: store},
 		Transactions:   &TransactionService{store: store},
-		Debtors:        &DebtorsService{store: store},
+		// Debtors:        &DebtorsService{store: store},
 	}
 }
 

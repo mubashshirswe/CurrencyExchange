@@ -8,11 +8,11 @@ package service
 // 	"github.com/mubashshir3767/currencyExchange/internal/types"
 // )
 
-// type DebtorsService struct {
+// type DebtsService struct {
 // 	store store.Storage
 // }
 
-// func (s *DebtorsService) Create(ctx context.Context, debtor *store.Debtors) error {
+// func (s *DebtsService) Create(ctx context.Context, debtor *store.Debtors) error {
 // 	tx, err := s.store.BeginTx(ctx)
 // 	if err != nil {
 // 		return err
@@ -74,7 +74,7 @@ package service
 // 	return nil
 // }
 
-// func (s *DebtorsService) Transaction(ctx context.Context, debtor *store.Debtors) error {
+// func (s *DebtsService) Transaction(ctx context.Context, debtor *store.Debtors) error {
 // 	tx, err := s.store.BeginTx(ctx)
 // 	if err != nil {
 // 		return err
@@ -152,7 +152,7 @@ package service
 // 	return nil
 // }
 
-// func (s *DebtorsService) Update(ctx context.Context, record *store.BalanceRecord) error {
+// func (s *DebtsService) Update(ctx context.Context, record *store.BalanceRecord) error {
 // 	tx, err := s.store.BeginTx(ctx)
 // 	if err != nil {
 // 		return err
@@ -227,7 +227,7 @@ package service
 // 	return nil
 // }
 
-// func (s *DebtorsService) Delete(ctx context.Context, balanceRecordId int64) error {
+// func (s *DebtsService) Delete(ctx context.Context, balanceRecordId int64) error {
 // 	tx, err := s.store.BeginTx(ctx)
 // 	if err != nil {
 // 		return err
@@ -289,7 +289,7 @@ package service
 // 	return nil
 // }
 
-// func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64) (map[string]interface{}, error) {
+// func (s *DebtsService) GetByCompanyId(ctx context.Context, companyId int64) (map[string]interface{}, error) {
 // 	s.store.Debtors.GetByUserId(ctx, companyId)
 
 // 	return nil, nil

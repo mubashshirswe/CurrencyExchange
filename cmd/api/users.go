@@ -141,11 +141,12 @@ func (app *application) UpdateUserHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	user := &store.User{
-		ID:       id,
-		Username: payload.Username,
-		Role:     payload.Role,
-		Password: payload.Password,
-		Avatar:   payload.Avatar,
+		ID:        id,
+		Username:  payload.Username,
+		Role:      payload.Role,
+		Password:  payload.Password,
+		Avatar:    payload.Avatar,
+		CompanyId: payload.CompanyId,
 	}
 
 	if err := app.store.Users.Update(r.Context(), user); err != nil {

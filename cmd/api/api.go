@@ -99,16 +99,16 @@ func (app *application) mount() *chi.Mux {
 				})
 			})
 
-			r.Route("/debtors", func(r chi.Router) {
-				r.Post("/create", app.CreateDebtorsHandler)
-				r.Post("/transaction", app.CreateDebtorTransactionHandler)
-				r.Get("/company/{id}", app.GetDebtorsByCompanyIdHandler)
-				r.Route("/{id}", func(r chi.Router) {
-					r.Get("/", app.GetDebtorsByIdHandler)
-					r.Put("/", app.UpdateDebtorsHandler)
-					r.Delete("/", app.DeleteDebtorsHandler)
-				})
-			})
+			// r.Route("/debtors", func(r chi.Router) {
+			// 	r.Post("/create", app.CreateDebtorsHandler)
+			// 	r.Post("/transaction", app.CreateDebtorTransactionHandler)
+			// 	r.Get("/company/{id}", app.GetDebtorsByCompanyIdHandler)
+			// 	r.Route("/{id}", func(r chi.Router) {
+			// 		r.Get("/", app.GetDebtorsByIdHandler)
+			// 		r.Put("/", app.UpdateDebtorsHandler)
+			// 		r.Delete("/", app.DeleteDebtorsHandler)
+			// 	})
+			// })
 
 			r.Route("/transactions", func(r chi.Router) {
 				r.Post("/create", app.CreateTransactionHandler)
