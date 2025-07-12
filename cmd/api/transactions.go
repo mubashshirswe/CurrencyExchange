@@ -109,7 +109,7 @@ func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *htt
 
 	if err := app.service.Transactions.CompleteTransaction(r.Context(), payload); err != nil {
 		if err == sql.ErrNoRows {
-			app.notFoundErrorResponse(w, r, fmt.Errorf("BUYURTMA ALLAQACHON YAKUNLANGAN"))
+			app.badRequestResponse(w, r, fmt.Errorf("BUYURTMA ALLAQACHON YAKUNLANGAN"))
 		} else {
 			app.internalServerError(w, r, err)
 		}
