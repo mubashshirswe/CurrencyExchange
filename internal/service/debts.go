@@ -284,13 +284,13 @@ func (s *DebtsService) Delete(ctx context.Context, debtId int64) error {
 		balance.Balance += debt.DebtedAmount
 		balance.InOutLay -= debt.DebtedAmount
 
-		debtor.Balance += debt.DebtedAmount
+		debtor.Balance -= debt.DebtedAmount
 	case TYPE_BUY:
 		if balance.Balance >= debt.DebtedAmount {
 			balance.Balance -= debt.DebtedAmount
 			balance.OutInLay -= debt.DebtedAmount
 
-			debtor.Balance -= debt.DebtedAmount
+			debtor.Balance += debt.DebtedAmount
 		} else {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
