@@ -194,21 +194,37 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 
 	debt.CompanyID = balance.CompanyId
 
-	delta := debt.DebtedAmount - old.DebtedAmount
-
-	switch debt.Type {
+	switch old.Type {
 	case TYPE_SELL:
-		if balance.Balance >= delta {
-			balance.Balance -= delta
-			balance.InOutLay += delta
-			debtor.Balance -= delta
+		balance.Balance += old.DebtedAmount
+		balance.InOutLay -= old.DebtedAmount
+
+		debtor.Balance -= old.DebtedAmount
+	case TYPE_BUY:
+		if balance.Balance >= old.DebtedAmount {
+			balance.Balance -= old.DebtedAmount
+			balance.OutInLay -= old.DebtedAmount
+
+			debtor.Balance += old.DebtedAmount
 		} else {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
+	}
+
+	switch debt.Type {
+	case TYPE_SELL:
+		if balance.Balance >= debt.DebtedAmount {
+			balance.Balance -= debt.DebtedAmount
+			balance.InOutLay += debt.DebtedAmount
+			debtor.Balance += debt.DebtedAmount
+		} else {
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
+		}
+
 	case TYPE_BUY:
-		balance.Balance += delta
-		balance.OutInLay += delta
-		debtor.Balance += delta
+		balance.Balance += debt.DebtedAmount
+		balance.OutInLay += debt.DebtedAmount
+		debtor.Balance -= debt.DebtedAmount
 	}
 
 	if err := debtsStorage.Update(ctx, debt); err != nil {
