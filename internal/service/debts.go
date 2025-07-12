@@ -36,7 +36,7 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 		}
 		balance.Balance -= debt.ReceivedAmount
 		balance.InOutLay += debt.ReceivedAmount
-		debt.DebtedAmount = -debt.DebtedAmount
+		debt.State = 1
 	case TYPE_BUY:
 		balance.Balance += debt.ReceivedAmount
 		balance.OutInLay += debt.ReceivedAmount

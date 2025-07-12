@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS debts (
     is_balance_effect int DEFAULT 0,
     type bigint,
     status  bigint,
+    state bigint,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );
 

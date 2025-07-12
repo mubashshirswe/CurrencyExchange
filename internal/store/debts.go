@@ -13,6 +13,7 @@ type Debts struct {
 	ReceivedCurrency   string    `json:"received_currency"`
 	DebtedAmount       int64     `json:"debted_amount"`
 	DebtedCurrency     string    `json:"debted_currency"`
+	State              int64     `json:"state"`
 	UserID             int64     `json:"user_id"`
 	CompanyID          int64     `json:"company_id"`
 	DebtorId           int64     `json:"debtor_id"`
@@ -47,8 +48,8 @@ func NewDebtsStorage(db DBTX) *DebtsStorage {
 func (s *DebtsStorage) Create(ctx context.Context, credits *Debts) error {
 	query := `
 				INSERT INTO debts (received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, company_id, debtor_id)
-				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at
+				details, phone, is_balance_effect, type, company_id, debtor_id, state)
+				VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at
 			`
 
 	err := s.db.QueryRowContext(
@@ -65,6 +66,7 @@ func (s *DebtsStorage) Create(ctx context.Context, credits *Debts) error {
 		credits.Type,
 		credits.CompanyID,
 		credits.DebtorId,
+		credits.State,
 	).Scan(
 		&credits.ID,
 		&credits.CreatedAt,
@@ -80,7 +82,7 @@ func (s *DebtsStorage) Create(ctx context.Context, credits *Debts) error {
 func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id, state
 				FROM debts WHERE company_id = $1 
 			`
 
@@ -112,6 +114,7 @@ func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]D
 			&credit.CreatedAt,
 			&credit.CompanyID,
 			&credit.DebtorId,
+			&credit.State,
 		)
 
 		if err != nil {
@@ -132,7 +135,7 @@ func (s *DebtsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]D
 func (s *DebtsStorage) GetByDebtorId(ctx context.Context, debtorId int64) ([]Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id, state
 				FROM debts WHERE debtor_id = $1 
 			`
 
@@ -164,6 +167,7 @@ func (s *DebtsStorage) GetByDebtorId(ctx context.Context, debtorId int64) ([]Deb
 			&credit.CreatedAt,
 			&credit.CompanyID,
 			&credit.DebtorId,
+			&credit.State,
 		)
 
 		if err != nil {
@@ -184,7 +188,7 @@ func (s *DebtsStorage) GetByDebtorId(ctx context.Context, debtorId int64) ([]Deb
 func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id, state
 				FROM debts WHERE user_id = $1
 			`
 
@@ -216,6 +220,7 @@ func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, 
 			&credit.CreatedAt,
 			&credit.CompanyID,
 			&credit.DebtorId,
+			&credit.State,
 		)
 
 		if err != nil {
@@ -236,7 +241,7 @@ func (s *DebtsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debts, 
 func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 	query := `
 				SELECT id, received_amount, received_currency, debted_amount, debted_currency, user_id, 
-				details, phone, is_balance_effect, type, created_at, company_id, debtor_id
+				details, phone, is_balance_effect, type, created_at, company_id, debtor_id, state
 				FROM debts WHERE id = $1
 			`
 
@@ -261,6 +266,7 @@ func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 		&credit.CreatedAt,
 		&credit.CompanyID,
 		&credit.DebtorId,
+		&credit.State,
 	)
 
 	loc, _ := time.LoadLocation("Asia/Tashkent")
@@ -277,7 +283,7 @@ func (s *DebtsStorage) GetById(ctx context.Context, id int64) (*Debts, error) {
 func (s *DebtsStorage) Update(ctx context.Context, credit *Debts) error {
 	query := `
 				UPDATE debts SET received_amount = $1, received_currency = $2, debted_amount = $3, debted_currency = $4, 
-				user_id = $5, details = $6, phone = $7, is_balance_effect = $8, type = $9, company_id = $10, debtor_id = $11  WHERE id = $12
+				user_id = $5, details = $6, phone = $7, is_balance_effect = $8, type = $9, company_id = $10, debtor_id = $11, state = $12  WHERE id = $13
 			`
 
 	rows, err := s.db.ExecContext(
@@ -294,6 +300,7 @@ func (s *DebtsStorage) Update(ctx context.Context, credit *Debts) error {
 		&credit.Type,
 		&credit.CompanyID,
 		&credit.DebtorId,
+		&credit.State,
 		credit.ID,
 	)
 
