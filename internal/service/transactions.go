@@ -413,7 +413,7 @@ func (s *TransactionService) GetByField(ctx context.Context, fieldName string, v
 			"received_currency":     tran.ReceivedCurrency,
 			"delivered_currency":    tran.DeliveredCurrency,
 			"delivered_amount":      tran.DeliveredAmount,
-			"delivered_user":        GetUser(users, tran.DeliveredUserId).Username,
+			"delivered_user":        GetUser(users, tran.DeliveredUserId),
 			"delivered_user_id":     tran.DeliveredUserId,
 			"delivered_service_fee": tran.DeliveredServiceFee,
 			"phone":                 tran.Phone,
