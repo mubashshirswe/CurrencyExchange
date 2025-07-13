@@ -199,7 +199,7 @@ func (app *application) ArchiveTransactionsHandler(w http.ResponseWriter, r *htt
 }
 
 func (app *application) ArchivedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
-	transactions, err := app.store.Transactions.Archived(r.Context())
+	transactions, err := app.service.Transactions.Archived(r.Context())
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

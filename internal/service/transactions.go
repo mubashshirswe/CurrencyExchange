@@ -273,6 +273,54 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 	return nil
 }
 
+func (s *TransactionService) Archived(ctx context.Context) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.Archived(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	companies, err := s.store.Companies.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users, err := s.store.Users.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []map[string]interface{}
+	getCurrencies := make(map[string]int64)
+	giveCurrencies := make(map[string]int64)
+
+	for _, tran := range trans {
+		if tran.Status == TRANSACTION_STATUS_PENDING {
+			if tran.Type == TYPE_SELL {
+				getCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+			} else {
+				giveCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+			}
+			res := map[string]interface{}{
+				"marked_service_fee":    tran.MarkedServiceFee,
+				"received_amount":       tran.ReceivedAmount,
+				"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
+				"received_user":         GetUser(users, &tran.ReceivedUserId),
+				"received_currency":     tran.ReceivedCurrency,
+				"delivered_currency":    tran.DeliveredCurrency,
+				"delivered_amount":      tran.DeliveredAmount,
+				"delivered_user":        GetUser(users, tran.DeliveredUserId),
+				"delivered_service_fee": tran.DeliveredServiceFee,
+				"phone":                 tran.Phone,
+				"details":               tran.Details,
+				"created_at":            tran.CreatedAt,
+				"type":                  tran.Type,
+			}
+
+			response = append(response, res)
+		}
+	}
+	return response, nil
+}
+
 func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 	tx, err := s.store.BeginTx(ctx)
 	if err != nil {
