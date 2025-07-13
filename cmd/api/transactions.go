@@ -129,7 +129,7 @@ func (app *application) GetTransactionsByFieldHandler(w http.ResponseWriter, r *
 		return
 	}
 
-	transactions, err := app.store.Transactions.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
+	transactions, err := app.service.Transactions.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

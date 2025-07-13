@@ -33,6 +33,7 @@ type Service struct {
 	}
 
 	Transactions interface {
+		GetByField(context.Context, string, any) ([]map[string]interface{}, error)
 		PerformTransaction(context.Context, *store.Transaction) error
 		CompleteTransaction(context.Context, types.TransactionComplete) error
 		GetByCompanyId(context.Context, int64) ([]map[string]interface{}, error)

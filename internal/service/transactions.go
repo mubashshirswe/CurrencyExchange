@@ -434,6 +434,51 @@ func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64
 	return response, nil
 }
 
+func (s *TransactionService) GetByField(ctx context.Context, fieldName string, value any) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.GetByField(ctx, fieldName, value)
+	if err != nil {
+		return nil, err
+	}
+
+	companies, err := s.store.Companies.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+	users, err := s.store.Users.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var response []map[string]interface{}
+	for _, tran := range trans {
+		if tran.Status == TRANSACTION_STATUS_PENDING {
+
+			res := map[string]interface{}{
+				"marked_service_fee":    tran.MarkedServiceFee,
+				"received_amount":       tran.ReceivedAmount,
+				"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
+				"received_company_id":   tran.ReceivedCompanyId,
+				"received_user":         GetUser(users, &tran.ReceivedUserId),
+				"received_user_id":      tran.ReceivedUserId,
+				"received_currency":     tran.ReceivedCurrency,
+				"delivered_currency":    tran.DeliveredCurrency,
+				"delivered_amount":      tran.DeliveredAmount,
+				"delivered_user":        GetUser(users, tran.DeliveredUserId),
+				"delivered_user_id":     tran.DeliveredUserId,
+				"delivered_service_fee": tran.DeliveredServiceFee,
+				"phone":                 tran.Phone,
+				"details":               tran.Details,
+				"created_at":            tran.CreatedAt,
+				"type":                  tran.Type,
+			}
+
+			response = append(response, res)
+		}
+	}
+
+	return response, nil
+}
+
 func (s *TransactionService) GetInfos(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
 	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId)
 	if err != nil {
