@@ -146,6 +146,7 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 
 	tran.Status = TRANSACTION_STATUS_COMPLETED
 	tran.DeliveredServiceFee = &transaction.RecievedServiceFee
+	tran.DeliveredUserId = &transaction.DeliveredUserId
 
 	if err := transactionsStorage.Update(ctx, tran); err != nil {
 		tx.Rollback()
