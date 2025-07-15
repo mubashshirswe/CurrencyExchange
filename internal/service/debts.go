@@ -107,7 +107,7 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 		return fmt.Errorf("DEBTED CURRENCIES ARE NOT MATCH %v", err)
 	}
 
-	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &debt.UserID, debt.ReceivedCurrency)
+	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &debtor.UserID, debt.ReceivedCurrency)
 	if err != nil {
 		return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByUserIdAndCurrency %v", err)
 	}
