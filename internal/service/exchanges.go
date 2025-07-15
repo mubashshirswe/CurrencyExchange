@@ -105,11 +105,6 @@ func (s *ExchangeService) Create(ctx context.Context, exchange *store.Exchange) 
 		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
 	}
 
-	if err := exchangeStore.Create(ctx, exchange); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
-	}
-
 	tx.Commit()
 	return nil
 }
