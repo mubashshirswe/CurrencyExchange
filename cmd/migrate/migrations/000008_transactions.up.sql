@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     delivered_company_id bigint,
     delivered_user_id bigint,
     delivered_service_fee bigint DEFAULT 0,
-    phone varchar(9) DEFAULT NULL,
+    phone varchar(255) DEFAULT NULL,
     details varchar(255) DEFAULT NULL,
     status bigint,
     type bigint,

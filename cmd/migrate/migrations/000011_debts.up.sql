@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS debts (
     company_id bigint,
     debtor_id bigint,
     details varchar(255) DEFAULT NULL,
-    phone varchar(9) DEFAULT NULL,
+    phone varchar(255) DEFAULT NULL,
     is_balance_effect int DEFAULT 0,
     type bigint,
     status  bigint,
