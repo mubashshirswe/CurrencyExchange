@@ -114,6 +114,7 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 
 	debt.CompanyID = balance.CompanyId
 	debtor.CompanyID = balance.CompanyId
+	debt.UserID = debtor.UserID
 
 	switch debt.Type {
 	case TYPE_SELL:
