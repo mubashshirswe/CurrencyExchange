@@ -119,7 +119,7 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName string, from, to *string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
-				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 AND created_at BETWEEN $3 AND $4 ORDER BY created_at DESC`
+				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2  AND amount != 0 AND created_at BETWEEN $3 AND $4 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -141,7 +141,7 @@ func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName 
 func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
-				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 ORDER BY created_at DESC`
+				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 AND amount != 0 ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -161,7 +161,7 @@ func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string,
 func (s *BalanceRecordStorage) Archived(ctx context.Context) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
-				FROM balance_records WHERE status = $1 ORDER BY created_at DESC`
+				FROM balance_records WHERE status = $1 AND amount != 0  ORDER BY created_at DESC`
 
 	rows, err := s.db.QueryContext(
 		ctx,
