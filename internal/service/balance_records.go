@@ -44,13 +44,12 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 	fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
 
 	/// SELLED MONEY PEFPERFORMROM
-	if selledCurrencyBalance.Balance >= balanceRecord.SelledMoney {
-		selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
-		selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
-	} else {
+	if selledCurrencyBalance.Balance < balanceRecord.SelledMoney {
 		tx.Rollback()
 		return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 	}
+	selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
+	selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
 
 	fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
 
