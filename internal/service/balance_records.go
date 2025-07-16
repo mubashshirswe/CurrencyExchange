@@ -50,7 +50,9 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 	}
 
-	if err := s.store.Balances.Update(ctx, selledCurrencyBalance); err != nil {
+	fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
+
+	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING selledCurrencyBalance %v", err)
 	}
