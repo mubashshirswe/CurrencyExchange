@@ -35,6 +35,8 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
+	fmt.Println("balanceRecord.UserId: ", &balanceRecord.UserId, "balanceRecord.SelledCurrency", balanceRecord.SelledCurrency)
+
 	selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
 	if err != nil {
 		tx.Rollback()
