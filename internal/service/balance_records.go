@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
@@ -49,7 +50,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 	}
 
-	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
+	if err := s.store.Balances.Update(ctx, selledCurrencyBalance); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING selledCurrencyBalance %v", err)
 	}
@@ -95,7 +96,10 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
 	}
 
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %v", err)
+	}
+	log.Println("Transaction committed successfully")
 	return nil
 }
 
