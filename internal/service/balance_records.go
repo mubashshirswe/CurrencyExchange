@@ -41,6 +41,8 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
 	}
 
+	fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
+
 	/// SELLED MONEY PEFPERFORMROM
 	if selledCurrencyBalance.Balance >= balanceRecord.SelledMoney {
 		selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
