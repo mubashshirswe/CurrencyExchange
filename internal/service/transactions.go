@@ -323,7 +323,7 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 			}
 		}
-		if err := balancesStorage.Create(ctx, balance); err != nil {
+		if err := balancesStorage.Update(ctx, balance); err != nil {
 			tx.Rollback()
 			return err
 		}
