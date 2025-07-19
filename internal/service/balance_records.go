@@ -29,76 +29,80 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 		return err
 	}
 
-	receivedCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
-	}
+	// SELLED MONEY PERFORM
+	if balanceRecord.SelledMoney > 0 {
+		fmt.Println("balanceRecord.UserId: ", &balanceRecord.UserId, "balanceRecord.SelledCurrency", balanceRecord.SelledCurrency)
 
-	fmt.Println("balanceRecord.UserId: ", &balanceRecord.UserId, "balanceRecord.SelledCurrency", balanceRecord.SelledCurrency)
+		selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
+		}
 
-	selledCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.SelledCurrency)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
-	}
+		fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
 
-	fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
+		if selledCurrencyBalance.Balance < balanceRecord.SelledMoney {
+			tx.Rollback()
+			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
+		}
+		selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
+		selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
 
-	/// SELLED MONEY PEFPERFORMROM
-	if selledCurrencyBalance.Balance < balanceRecord.SelledMoney {
-		tx.Rollback()
-		return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
-	}
-	selledCurrencyBalance.Balance -= balanceRecord.SelledMoney
-	selledCurrencyBalance.InOutLay += balanceRecord.SelledMoney
+		fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
 
-	fmt.Println("selledCurrencyBalance: ", selledCurrencyBalance)
+		if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE UPDATING selledCurrencyBalance %v", err)
+		}
 
-	if err := balancesStorage.Update(ctx, selledCurrencyBalance); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING selledCurrencyBalance %v", err)
-	}
+		selledMoneyRecord := &store.BalanceRecord{
+			Amount:    balanceRecord.SelledMoney,
+			Currency:  balanceRecord.SelledCurrency,
+			CompanyID: user.CompanyId,
+			BalanceID: selledCurrencyBalance.ID,
+			Details:   &balanceRecord.Details,
+			UserID:    balanceRecord.UserId,
+			Type:      TYPE_SELL,
+		}
 
-	selledMoneyRecord := &store.BalanceRecord{
-		Amount:    balanceRecord.SelledMoney,
-		Currency:  balanceRecord.SelledCurrency,
-		CompanyID: user.CompanyId,
-		BalanceID: selledCurrencyBalance.ID,
-		Details:   &balanceRecord.Details,
-		UserID:    balanceRecord.UserId,
-		Type:      TYPE_SELL,
-	}
-
-	if err := balanceRecordsStorage.Create(ctx, selledMoneyRecord); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+		if err := balanceRecordsStorage.Create(ctx, selledMoneyRecord); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+		}
 	}
 
 	// RECEIVED MONEY PERFORM
-	if receivedCurrencyBalance != nil {
-		receivedCurrencyBalance.Balance += balanceRecord.ReceivedMoney
-		receivedCurrencyBalance.OutInLay += balanceRecord.ReceivedMoney
-	}
+	if balanceRecord.ReceivedMoney > 0 {
+		receivedCurrencyBalance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &balanceRecord.UserId, balanceRecord.ReceivedCurrency)
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf(types.BALANCE_CURRENCY_NOT_FOUND)
+		}
 
-	if err := balancesStorage.Update(ctx, receivedCurrencyBalance); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE UPDATING receivedCurrencyBalance %v", err)
-	}
+		if receivedCurrencyBalance != nil {
+			receivedCurrencyBalance.Balance += balanceRecord.ReceivedMoney
+			receivedCurrencyBalance.OutInLay += balanceRecord.ReceivedMoney
+		}
 
-	receivedMoneyRecord := &store.BalanceRecord{
-		Amount:    balanceRecord.ReceivedMoney,
-		Currency:  balanceRecord.ReceivedCurrency,
-		CompanyID: user.CompanyId,
-		BalanceID: receivedCurrencyBalance.ID,
-		Details:   &balanceRecord.Details,
-		UserID:    balanceRecord.UserId,
-		Type:      TYPE_BUY,
-	}
+		if err := balancesStorage.Update(ctx, receivedCurrencyBalance); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE UPDATING receivedCurrencyBalance %v", err)
+		}
 
-	if err := balanceRecordsStorage.Create(ctx, receivedMoneyRecord); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+		receivedMoneyRecord := &store.BalanceRecord{
+			Amount:    balanceRecord.ReceivedMoney,
+			Currency:  balanceRecord.ReceivedCurrency,
+			CompanyID: user.CompanyId,
+			BalanceID: receivedCurrencyBalance.ID,
+			Details:   &balanceRecord.Details,
+			UserID:    balanceRecord.UserId,
+			Type:      TYPE_BUY,
+		}
+
+		if err := balanceRecordsStorage.Create(ctx, receivedMoneyRecord); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE CREATING BALANCE RECORD %v", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
