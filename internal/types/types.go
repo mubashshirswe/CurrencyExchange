@@ -16,3 +16,13 @@ type TransactionComplete struct {
 	DeliveredUserId    int64 `json:"delivered_user_id"`
 	RecievedServiceFee int64 `json:"received_service_fee"`
 }
+
+type ReceivedIncomes struct {
+	ReceivedAmount   int64  `json:"received_amount"`
+	ReceivedCurrency string `json:"received_currency"`
+}
+
+type DeliveredOutcomes struct {
+	DeliveredAmount   int64  `json:"delivered_amount"`
+	DeliveredCurrency string `json:"delivered_currency"`
+}

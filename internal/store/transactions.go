@@ -3,29 +3,30 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type Transaction struct {
-	ID                  int64     `json:"id"`
-	MarkedServiceFee    *int64    `json:"marked_service_fee"`
-	ReceivedCompanyId   int64     `json:"received_company_id"`
-	ReceivedUserId      int64     `json:"received_user_id"`
-	ReceivedAmount      int64     `json:"received_amount"`
-	ReceivedCurrency    string    `json:"received_currency"`
-	DeliveredAmount     int64     `json:"delivered_amount"`
-	DeliveredCurrency   string    `json:"delivered_currency"`
-	DeliveredCompanyId  int64     `json:"delivered_company_id"`
-	DeliveredUserId     *int64    `json:"delivered_user_id"`
-	DeliveredServiceFee *int64    `json:"delivered_service_fee"`
-	Phone               string    `json:"phone"`
-	Details             string    `json:"details"`
-	Status              int64     `json:"status"`
-	Type                int64     `json:"type"`
-	CreatedAt           time.Time `json:"-"`
-	CreatedAtFormatted  string    `json:"created_at"`
+	ID                  int64                     `json:"id"`
+	MarkedServiceFee    *int64                    `json:"marked_service_fee"`
+	ReceivedCompanyId   int64                     `json:"received_company_id"`
+	ReceivedUserId      int64                     `json:"received_user_id"`
+	ReceivedIncomes     []types.ReceivedIncomes   `json:"received_incomes"`
+	DeliveredOutcomes   []types.DeliveredOutcomes `json:"delivered_outcomes"`
+	DeliveredCompanyId  int64                     `json:"delivered_company_id"`
+	DeliveredUserId     *int64                    `json:"delivered_user_id"`
+	DeliveredServiceFee *int64                    `json:"delivered_service_fee"`
+	Phone               string                    `json:"phone"`
+	Details             string                    `json:"details"`
+	Status              int64                     `json:"status"`
+	Type                int64                     `json:"type"`
+	CreatedAt           time.Time                 `json:"-"`
+	CreatedAtFormatted  string                    `json:"created_at"`
 }
 
 type TransactionStorage struct {
@@ -56,21 +57,29 @@ func (s *TransactionStorage) Archive(ctx context.Context) error {
 }
 
 func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error {
+	receivedIncomesJSON, err := json.Marshal(tr.ReceivedIncomes)
+	if err != nil {
+		return err
+	}
+
+	deliveredOutcomesJSON, err := json.Marshal(tr.DeliveredOutcomes)
+	if err != nil {
+		return err
+	}
+
 	query := `
 			INSERT INTO transactions(
-				marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+				marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, created_at`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at`
 
-	err := s.db.QueryRowContext(
+	err = s.db.QueryRowContext(
 		ctx,
 		query,
 		tr.MarkedServiceFee,
 		tr.DeliveredServiceFee,
-		tr.ReceivedAmount,
-		tr.ReceivedCurrency,
-		tr.DeliveredAmount,
-		tr.DeliveredCurrency,
+		receivedIncomesJSON,
+		deliveredOutcomesJSON,
 		tr.ReceivedCompanyId,
 		tr.DeliveredCompanyId,
 		tr.ReceivedUserId,
@@ -90,22 +99,41 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 
 	return nil
 }
-
 func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error {
-	query := `	
-				UPDATE transactions SET marked_service_fee = $1, delivered_service_fee = $2, received_amount = $3, received_currency = $4, 
-				delivered_amount = $5, delivered_currency = $6, received_company_id = $7, delivered_company_id = $8, received_user_id = $9, 
-				delivered_user_id = $10, phone = $11, details = $12, status = $13, type = $14 WHERE id = $15 AND status = $16`
+	receivedIncomesJSON, err := json.Marshal(tr.ReceivedIncomes)
+	if err != nil {
+		return err
+	}
 
-	rows, err := s.db.ExecContext(
+	deliveredOutcomesJSON, err := json.Marshal(tr.DeliveredOutcomes)
+	if err != nil {
+		return err
+	}
+
+	query := `	
+		UPDATE transactions SET
+			marked_service_fee = $1,
+			delivered_service_fee = $2,
+			received_incomes = $3,
+			delivered_outcomes = $4,
+			received_company_id = $5,
+			delivered_company_id = $6,
+			received_user_id = $7,
+			delivered_user_id = $8,
+			phone = $9,
+			details = $10,
+			status = $11,
+			type = $12
+		WHERE id = $13 AND status = $14
+	`
+
+	result, err := s.db.ExecContext(
 		ctx,
 		query,
 		tr.MarkedServiceFee,
 		tr.DeliveredServiceFee,
-		tr.ReceivedAmount,
-		tr.ReceivedCurrency,
-		tr.DeliveredAmount,
-		tr.DeliveredCurrency,
+		receivedIncomesJSON,
+		deliveredOutcomesJSON,
 		tr.ReceivedCompanyId,
 		tr.DeliveredCompanyId,
 		tr.ReceivedUserId,
@@ -121,13 +149,14 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 	if err != nil {
 		return err
 	}
-	res, err := rows.RowsAffected()
+
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return err
 	}
 
-	if res == 0 {
-		return errors.New("TRANSACTION THAT WILL BE UPDATED NOT FOUND")
+	if rowsAffected == 0 {
+		return errors.New("transaction to update not found")
 	}
 
 	return nil
@@ -135,12 +164,14 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 
 func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE id = $1 AND status = $2 ORDER BY created_at DESC
 			`
 
 	tr := &Transaction{}
+	var receivedIncomesJSON []byte
+	var deliveredOutcomesJSON []byte
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -151,10 +182,8 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 		&tr.ID,
 		&tr.MarkedServiceFee,
 		&tr.DeliveredServiceFee,
-		&tr.ReceivedAmount,
-		&tr.ReceivedCurrency,
-		&tr.DeliveredAmount,
-		&tr.DeliveredCurrency,
+		&receivedIncomesJSON,
+		&deliveredOutcomesJSON,
 		&tr.ReceivedCompanyId,
 		&tr.DeliveredCompanyId,
 		&tr.ReceivedUserId,
@@ -169,6 +198,13 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 		return nil, err
 	}
 
+	if err := json.Unmarshal(receivedIncomesJSON, &tr.ReceivedIncomes); err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(deliveredOutcomesJSON, &tr.DeliveredOutcomes); err != nil {
+		return nil, err
+	}
+
 	loc, _ := time.LoadLocation("Asia/Tashkent")
 	createdAtInTashkent := tr.CreatedAt.In(loc)
 	tr.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
@@ -178,7 +214,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 
 func (s *TransactionStorage) Archived(ctx context.Context) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE status = $1 ORDER BY created_at DESC
 			`
@@ -194,7 +230,7 @@ func (s *TransactionStorage) Archived(ctx context.Context) ([]Transaction, error
 
 func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND status != $2 ORDER BY created_at DESC
 			`
@@ -211,7 +247,7 @@ func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, f
 
 func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_amount, received_currency, delivered_amount, delivered_currency,
+				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 AND status != $4 ORDER BY created_at DESC
 			`
@@ -259,6 +295,8 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 	}
 	defer rows.Close()
 	var transactions []Transaction
+	var receivedIncomesJSON []byte
+	var deliveredOutcomesJSON []byte
 
 	for rows.Next() {
 		tr := &Transaction{}
@@ -266,10 +304,8 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 			&tr.ID,
 			&tr.MarkedServiceFee,
 			&tr.DeliveredServiceFee,
-			&tr.ReceivedAmount,
-			&tr.ReceivedCurrency,
-			&tr.DeliveredAmount,
-			&tr.DeliveredCurrency,
+			&receivedIncomesJSON,
+			&deliveredOutcomesJSON,
 			&tr.ReceivedCompanyId,
 			&tr.DeliveredCompanyId,
 			&tr.ReceivedUserId,
@@ -282,6 +318,13 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 		)
 
 		if err != nil {
+			return nil, err
+		}
+
+		if err := json.Unmarshal(receivedIncomesJSON, &tr.ReceivedIncomes); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(deliveredOutcomesJSON, &tr.DeliveredOutcomes); err != nil {
 			return nil, err
 		}
 

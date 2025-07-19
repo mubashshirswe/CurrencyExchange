@@ -29,57 +29,58 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 	balancesStorage := store.NewBalanceStorage(tx)
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
 	transactionsStorage := store.NewTransactionStorage(tx)
-
-	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
-	if err != nil {
-		tx.Rollback()
-		if err == sql.ErrNoRows {
-			return err
-		} else {
-			return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
-		}
-	}
-
-	switch transaction.Type {
-	case TYPE_SELL:
-		if balance.Balance >= transaction.ReceivedAmount {
-			balance.Balance -= transaction.ReceivedAmount
-			balance.InOutLay += transaction.ReceivedAmount
-		} else {
-			tx.Rollback()
-			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
-		}
-	case TYPE_BUY:
-		balance.Balance += transaction.ReceivedAmount
-		balance.OutInLay += transaction.ReceivedAmount
-	default:
-		tx.Rollback()
-		return fmt.Errorf("FOUND UNKNOWN TYPE")
-	}
-
 	if err := transactionsStorage.Create(ctx, transaction); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("ERROR OCCURRED WHILE Transactions.Create %v", err)
 	}
 
-	balanceRecord := &store.BalanceRecord{
-		Amount:        transaction.ReceivedAmount,
-		Currency:      transaction.ReceivedCurrency,
-		BalanceID:     balance.ID,
-		CompanyID:     balance.CompanyId,
-		UserID:        transaction.ReceivedUserId,
-		Type:          transaction.Type,
-		TransactionId: &transaction.ID,
-	}
+	for _, tr := range transaction.ReceivedIncomes {
+		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, tr.ReceivedCurrency)
+		if err != nil {
+			tx.Rollback()
+			if err == sql.ErrNoRows {
+				return err
+			} else {
+				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
+			}
+		}
 
-	if err := balanceRecordsStorage.Create(ctx, balanceRecord); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
-	}
+		switch transaction.Type {
+		case TYPE_SELL:
+			if balance.Balance >= tr.ReceivedAmount {
+				balance.Balance -= tr.ReceivedAmount
+				balance.InOutLay += tr.ReceivedAmount
+			} else {
+				tx.Rollback()
+				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
+			}
+		case TYPE_BUY:
+			balance.Balance += tr.ReceivedAmount
+			balance.OutInLay += tr.ReceivedAmount
+		default:
+			tx.Rollback()
+			return fmt.Errorf("FOUND UNKNOWN TYPE")
+		}
 
-	if err := balancesStorage.Update(ctx, balance); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
+		balanceRecord := &store.BalanceRecord{
+			Amount:        tr.ReceivedAmount,
+			Currency:      tr.ReceivedCurrency,
+			BalanceID:     balance.ID,
+			CompanyID:     balance.CompanyId,
+			UserID:        transaction.ReceivedUserId,
+			Type:          transaction.Type,
+			TransactionId: &transaction.ID,
+		}
+
+		if err := balanceRecordsStorage.Create(ctx, balanceRecord); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
+		}
+
+		if err := balancesStorage.Update(ctx, balance); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE BalanceRecords.Create %v", err)
+		}
 	}
 
 	tx.Commit()
@@ -99,51 +100,54 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 	tran, err := transactionsStorage.GetById(ctx, transaction.TransactionID)
 	if err != nil {
 		tx.Rollback()
-		return err
+		return fmt.Errorf("ERROR OCCURRED WHILE transactionsStorage.GetById %v", err)
 	}
 
-	balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.DeliveredUserId, tran.DeliveredCurrency)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency( %v", err)
-	}
-
-	var recordType int64
-	if tran.Type == TYPE_SELL {
-		recordType = TYPE_BUY
-		balance.Balance += tran.DeliveredAmount
-		balance.OutInLay += tran.ReceivedAmount
-	} else {
-		recordType = TYPE_SELL
-		if balance.Balance >= tran.DeliveredAmount {
-			balance.Balance -= tran.DeliveredAmount
-			balance.InOutLay += tran.ReceivedAmount
-		} else {
+	for _, tr := range tran.DeliveredOutcomes {
+		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.DeliveredUserId, tr.DeliveredCurrency)
+		if err != nil {
 			tx.Rollback()
-			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
+			return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency( %v", err)
+		}
+
+		var recordType int64
+		if tran.Type == TYPE_SELL {
+			recordType = TYPE_BUY
+			balance.Balance += tr.DeliveredAmount
+			balance.OutInLay += tr.DeliveredAmount
+		} else {
+			recordType = TYPE_SELL
+			if balance.Balance >= tr.DeliveredAmount {
+				balance.Balance -= tr.DeliveredAmount
+				balance.InOutLay += tr.DeliveredAmount
+			} else {
+				tx.Rollback()
+				return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
+			}
+		}
+
+		balanceRecord := &store.BalanceRecord{
+			Amount:        tr.DeliveredAmount,
+			Currency:      tr.DeliveredCurrency,
+			BalanceID:     balance.ID,
+			UserID:        transaction.DeliveredUserId,
+			TransactionId: &tran.ID,
+			CompanyID:     tran.DeliveredCompanyId,
+			Type:          recordType,
+		}
+
+		if err := balanceRecordsStorage.Create(ctx, balanceRecord); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Create %v", err)
+		}
+
+		if err := balancesStorage.Update(ctx, balance); err != nil {
+			tx.Rollback()
+			return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Create %v", err)
 		}
 	}
 
-	balanceRecord := &store.BalanceRecord{
-		Amount:        tran.DeliveredAmount,
-		Currency:      tran.DeliveredCurrency,
-		BalanceID:     balance.ID,
-		UserID:        transaction.DeliveredUserId,
-		TransactionId: &tran.ID,
-		CompanyID:     tran.DeliveredCompanyId,
-		Type:          recordType,
-	}
-
-	if err := balanceRecordsStorage.Create(ctx, balanceRecord); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE balanceRecordsStorage.Create %v", err)
-	}
-
-	if err := balancesStorage.Update(ctx, balance); err != nil {
-		tx.Rollback()
-		return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Create %v", err)
-	}
-
+	fmt.Println("transaction", tran)
 	tran.Status = TRANSACTION_STATUS_COMPLETED
 	tran.DeliveredServiceFee = &transaction.RecievedServiceFee
 	tran.DeliveredUserId = &transaction.DeliveredUserId
@@ -205,63 +209,67 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 	}
 
 	if transaction.ReceivedUserId != 0 {
-		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, transaction.ReceivedCurrency)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+		for _, tr := range transaction.ReceivedIncomes {
+			balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &transaction.ReceivedUserId, tr.ReceivedCurrency)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
 
-		record := &store.BalanceRecord{
-			Amount:        transaction.ReceivedAmount,
-			Currency:      transaction.ReceivedCurrency,
-			UserID:        transaction.ReceivedUserId,
-			CompanyID:     balance.CompanyId,
-			TransactionId: &transaction.ID,
-			BalanceID:     balance.ID,
-			Details:       &transaction.Details,
-			Type:          transaction.Type,
-		}
+			record := &store.BalanceRecord{
+				Amount:        tr.ReceivedAmount,
+				Currency:      tr.ReceivedCurrency,
+				UserID:        transaction.ReceivedUserId,
+				CompanyID:     balance.CompanyId,
+				TransactionId: &transaction.ID,
+				BalanceID:     balance.ID,
+				Details:       &transaction.Details,
+				Type:          transaction.Type,
+			}
 
-		balance.Balance += transaction.ReceivedAmount
-		balance.OutInLay += transaction.ReceivedAmount
+			balance.Balance += tr.ReceivedAmount
+			balance.OutInLay += tr.ReceivedAmount
 
-		if err := balancesStorage.Update(ctx, balance); err != nil {
-			tx.Rollback()
-			return err
-		}
+			if err := balancesStorage.Update(ctx, balance); err != nil {
+				tx.Rollback()
+				return err
+			}
 
-		if err := balanceRecordsStorage.Update(ctx, record); err != nil {
-			tx.Rollback()
-			return err
+			if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
 	if transaction.DeliveredUserId != nil {
-		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, transaction.DeliveredUserId, transaction.DeliveredCurrency)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+		for _, tr := range transaction.DeliveredOutcomes {
+			balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, transaction.DeliveredUserId, tr.DeliveredCurrency)
+			if err != nil {
+				tx.Rollback()
+				return err
+			}
 
-		record := &store.BalanceRecord{
-			Amount:        transaction.DeliveredAmount,
-			Currency:      transaction.DeliveredCurrency,
-			UserID:        *transaction.DeliveredUserId,
-			CompanyID:     balance.CompanyId,
-			TransactionId: &transaction.ID,
-			BalanceID:     balance.ID,
-			Details:       &transaction.Details,
-			Type:          transaction.Type,
-		}
+			record := &store.BalanceRecord{
+				Amount:        tr.DeliveredAmount,
+				Currency:      tr.DeliveredCurrency,
+				UserID:        *transaction.DeliveredUserId,
+				CompanyID:     balance.CompanyId,
+				TransactionId: &transaction.ID,
+				BalanceID:     balance.ID,
+				Details:       &transaction.Details,
+				Type:          transaction.Type,
+			}
 
-		if err := balancesStorage.Update(ctx, balance); err != nil {
-			tx.Rollback()
-			return err
-		}
+			if err := balancesStorage.Update(ctx, balance); err != nil {
+				tx.Rollback()
+				return err
+			}
 
-		if err := balanceRecordsStorage.Update(ctx, record); err != nil {
-			tx.Rollback()
-			return err
+			if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
@@ -356,18 +364,20 @@ func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64
 	for _, tran := range trans {
 		if tran.Status == TRANSACTION_STATUS_PENDING {
 			if tran.Type == TYPE_SELL {
-				getCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+				for _, tr := range tran.DeliveredOutcomes {
+					getCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
+				}
 			} else {
-				giveCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+				for _, tr := range tran.DeliveredOutcomes {
+					giveCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
+				}
 			}
 			res := map[string]interface{}{
 				"marked_service_fee":    tran.MarkedServiceFee,
-				"received_amount":       tran.ReceivedAmount,
+				"received_incomes":      tran.ReceivedIncomes,
+				"delivered_outcomes":    tran.DeliveredOutcomes,
 				"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
 				"received_user":         GetUser(users, &tran.ReceivedUserId),
-				"received_currency":     tran.ReceivedCurrency,
-				"delivered_currency":    tran.DeliveredCurrency,
-				"delivered_amount":      tran.DeliveredAmount,
 				"delivered_user":        GetUser(users, tran.DeliveredUserId).Username,
 				"delivered_service_fee": tran.DeliveredServiceFee,
 				"phone":                 tran.Phone,
@@ -411,10 +421,8 @@ func (s *TransactionService) GetByField(ctx context.Context, fieldName string, v
 			"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
 			"received_user_id":      tran.ReceivedUserId,
 			"received_user":         GetUser(users, &tran.ReceivedUserId).Username,
-			"received_amount":       tran.ReceivedAmount,
-			"received_currency":     tran.ReceivedCurrency,
-			"delivered_amount":      tran.DeliveredAmount,
-			"delivered_currency":    tran.DeliveredCurrency,
+			"received_incomes":      tran.ReceivedIncomes,
+			"delivered_outcomes":    tran.DeliveredOutcomes,
 			"delivered_company_id":  tran.DeliveredCompanyId,
 			"delivered_company":     GetCompany(companies, tran.DeliveredCompanyId).Name,
 			"delivered_user":        GetUser(users, tran.DeliveredUserId),
@@ -456,10 +464,8 @@ func (s *TransactionService) Archived(ctx context.Context) ([]map[string]interfa
 			"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
 			"received_user_id":      tran.ReceivedUserId,
 			"received_user":         GetUser(users, &tran.ReceivedUserId).Username,
-			"received_amount":       tran.ReceivedAmount,
-			"received_currency":     tran.ReceivedCurrency,
-			"delivered_amount":      tran.DeliveredAmount,
-			"delivered_currency":    tran.DeliveredCurrency,
+			"received_incomes":      tran.ReceivedIncomes,
+			"delivered_outcomes":    tran.DeliveredOutcomes,
 			"delivered_company_id":  tran.DeliveredCompanyId,
 			"delivered_company":     GetCompany(companies, tran.DeliveredCompanyId).Name,
 			"delivered_user":        GetUser(users, tran.DeliveredUserId),
@@ -500,9 +506,13 @@ func (s *TransactionService) GetInfos(ctx context.Context, companyId int64) ([]m
 	for _, tran := range trans {
 		if tran.Status == TRANSACTION_STATUS_PENDING {
 			if tran.Type == TYPE_SELL {
-				getCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+				for _, tr := range tran.DeliveredOutcomes {
+					getCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
+				}
 			} else {
-				giveCurrencies[tran.DeliveredCurrency] += tran.DeliveredAmount
+				for _, tr := range tran.DeliveredOutcomes {
+					giveCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
+				}
 			}
 		}
 	}
