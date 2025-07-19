@@ -29,7 +29,7 @@ func (s *BalanceService) GetByCompanyId(ctx context.Context, companyId int64) ([
 
 		currencies[balance.Currency] += balance.Balance
 
-		user := GetUser(users, &balance.UserId)
+		user := GetUser(users, balance.UserId)
 
 		res := map[string]interface{}{
 			"username": user.Username,
@@ -47,9 +47,9 @@ func (s *BalanceService) GetByCompanyId(ctx context.Context, companyId int64) ([
 	return response, nil
 }
 
-func GetUser(users []store.User, id *int64) *store.User {
+func GetUser(users []store.User, id int64) *store.User {
 	for _, user := range users {
-		if id != nil && user.ID == *id {
+		if user.ID == id {
 			return &user
 		}
 	}

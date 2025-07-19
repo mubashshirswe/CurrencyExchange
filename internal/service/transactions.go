@@ -372,13 +372,18 @@ func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64
 					giveCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
 				}
 			}
+
+			deliveryUser := ""
+			if tran.DeliveredUserId != nil {
+				deliveryUser = GetUser(users, *tran.DeliveredUserId).Username
+			}
 			res := map[string]interface{}{
 				"marked_service_fee":    tran.MarkedServiceFee,
 				"received_incomes":      tran.ReceivedIncomes,
 				"delivered_outcomes":    tran.DeliveredOutcomes,
 				"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
-				"received_user":         GetUser(users, &tran.ReceivedUserId),
-				"delivered_user":        GetUser(users, tran.DeliveredUserId).Username,
+				"received_user":         GetUser(users, tran.ReceivedUserId).Username,
+				"delivered_user":        deliveryUser,
 				"delivered_service_fee": tran.DeliveredServiceFee,
 				"phone":                 tran.Phone,
 				"details":               tran.Details,
@@ -414,13 +419,13 @@ func (s *TransactionService) GetByField(ctx context.Context, fieldName string, v
 
 	var response []map[string]interface{}
 	for _, tran := range trans {
-		receiverUser := GetUser(users, &tran.ReceivedUserId).Username
-		var deliveryUser string
-		user := GetUser(users, tran.DeliveredUserId)
-		if user != nil {
-			deliveryUser = user.Username
-		} else {
-			deliveryUser = " "
+		receiverUser := GetUser(users, tran.ReceivedUserId).Username
+		deliveryUser := " "
+		if tran.DeliveredUserId != nil {
+			user := GetUser(users, *tran.DeliveredUserId)
+			if user != nil {
+				deliveryUser = user.Username
+			}
 		}
 
 		res := map[string]interface{}{
@@ -466,18 +471,22 @@ func (s *TransactionService) Archived(ctx context.Context) ([]map[string]interfa
 
 	var response []map[string]interface{}
 	for _, tran := range trans {
+		DeliveredUser := ""
+		if tran.DeliveredUserId != nil {
+			DeliveredUser = GetUser(users, *tran.DeliveredUserId).Username
+		}
 		res := map[string]interface{}{
 			"id":                    tran.ID,
 			"marked_service_fee":    tran.MarkedServiceFee,
 			"received_company_id":   tran.ReceivedCompanyId,
 			"received_company":      GetCompany(companies, tran.ReceivedCompanyId).Name,
 			"received_user_id":      tran.ReceivedUserId,
-			"received_user":         GetUser(users, &tran.ReceivedUserId).Username,
+			"received_user":         GetUser(users, tran.ReceivedUserId).Username,
 			"received_incomes":      tran.ReceivedIncomes,
 			"delivered_outcomes":    tran.DeliveredOutcomes,
 			"delivered_company_id":  tran.DeliveredCompanyId,
 			"delivered_company":     GetCompany(companies, tran.DeliveredCompanyId).Name,
-			"delivered_user":        GetUser(users, tran.DeliveredUserId),
+			"delivered_user":        DeliveredUser,
 			"delivered_user_id":     tran.DeliveredUserId,
 			"delivered_service_fee": tran.DeliveredServiceFee,
 			"phone":                 tran.Phone,
