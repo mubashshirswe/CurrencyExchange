@@ -18,6 +18,7 @@ type Service struct {
 
 	Balances interface {
 		GetByCompanyId(context.Context, int64) ([]map[string]interface{}, error)
+		GetAll(context.Context) ([]map[string]interface{}, error)
 	}
 
 	Debts interface {
