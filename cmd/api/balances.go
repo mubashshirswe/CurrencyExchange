@@ -93,7 +93,7 @@ func (app *application) GetBalanceByCompanyIdHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) GetAllBalanceHandler(w http.ResponseWriter, r *http.Request) {
-	balance, err := app.store.Balances.GetAll(r.Context())
+	balance, err := app.service.Balances.GetAll(r.Context())
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
