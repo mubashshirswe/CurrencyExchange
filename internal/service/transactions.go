@@ -389,6 +389,7 @@ func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64
 				"details":               tran.Details,
 				"created_at":            tran.CreatedAt,
 				"type":                  tran.Type,
+				"status":                tran.Status,
 			}
 
 			response = append(response, res)
@@ -446,6 +447,7 @@ func (s *TransactionService) GetByField(ctx context.Context, fieldName string, v
 			"details":               tran.Details,
 			"created_at":            tran.CreatedAt,
 			"type":                  tran.Type,
+			"status":                tran.Status,
 		}
 
 		response = append(response, res)
@@ -493,6 +495,7 @@ func (s *TransactionService) Archived(ctx context.Context) ([]map[string]interfa
 			"details":               tran.Details,
 			"created_at":            tran.CreatedAt,
 			"type":                  tran.Type,
+			"status":                tran.Status,
 		}
 
 		response = append(response, res)
