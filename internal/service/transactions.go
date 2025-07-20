@@ -261,6 +261,9 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				Type:          transaction.Type,
 			}
 
+			balance.Balance += tr.DeliveredAmount
+			balance.OutInLay += tr.DeliveredAmount
+
 			if err := balancesStorage.Update(ctx, balance); err != nil {
 				tx.Rollback()
 				return err
