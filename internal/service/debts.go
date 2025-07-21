@@ -128,8 +128,8 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 			balance.Balance -= debt.ReceivedAmount
 			balance.InOutLay += debt.ReceivedAmount
 
-			debt.DebtedAmount = -debt.DebtedAmount
-			debtor.Balance += debt.DebtedAmount
+			debt.ReceivedAmount = -debt.ReceivedAmount
+			debtor.Balance += debt.ReceivedAmount
 		} else {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
@@ -137,7 +137,7 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 		balance.Balance += debt.ReceivedAmount
 		balance.OutInLay += debt.ReceivedAmount
 
-		debtor.Balance += debt.DebtedAmount
+		debtor.Balance += debt.ReceivedAmount
 	}
 
 	if err := debtsStorage.Create(ctx, debt); err != nil {
