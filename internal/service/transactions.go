@@ -235,7 +235,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				return err
 			}
 
-			if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+			if err := balanceRecordsStorage.Create(ctx, record); err != nil {
 				tx.Rollback()
 				return err
 			}
@@ -269,7 +269,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				return err
 			}
 
-			if err := balanceRecordsStorage.Update(ctx, record); err != nil {
+			if err := balanceRecordsStorage.Create(ctx, record); err != nil {
 				tx.Rollback()
 				return err
 			}
