@@ -35,6 +35,8 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 		balance.Balance -= debt.ReceivedAmount
+		debt.ReceivedAmount = -debt.ReceivedAmount
+
 		balance.InOutLay += debt.ReceivedAmount
 		debt.State = 1
 	case TYPE_BUY:
@@ -43,16 +45,13 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 	}
 
 	debt.CompanyID = balance.CompanyId
-	var debtAmount int64
 	if debt.Type == TYPE_SELL {
-		debtAmount = -debt.DebtedAmount
-	} else {
-		debtAmount = debt.DebtedAmount
+		debt.DebtedAmount = -debt.DebtedAmount
 	}
 
 	debtor := &store.Debtors{
 		FullName:  debt.FullName,
-		Balance:   debtAmount,
+		Balance:   debt.DebtedAmount,
 		Currency:  debt.DebtedCurrency,
 		UserID:    debt.UserID,
 		CompanyID: debt.CompanyID,
