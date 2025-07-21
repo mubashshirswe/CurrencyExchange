@@ -38,15 +38,12 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 		balance.InOutLay += debt.ReceivedAmount
 
 		debt.ReceivedAmount = -debt.ReceivedAmount
+		debt.DebtedAmount = -debt.DebtedAmount
+
 		debt.State = 1
 	case TYPE_BUY:
 		balance.Balance += debt.ReceivedAmount
 		balance.OutInLay += debt.ReceivedAmount
-	}
-
-	debt.CompanyID = balance.CompanyId
-	if debt.Type == TYPE_SELL {
-		debt.DebtedAmount = -debt.DebtedAmount
 	}
 
 	debtor := &store.Debtors{
@@ -129,7 +126,8 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 			balance.InOutLay += debt.ReceivedAmount
 
 			debt.ReceivedAmount = -debt.ReceivedAmount
-			debtor.Balance += debt.ReceivedAmount
+			debt.DebtedAmount = -debt.DebtedAmount
+			debtor.Balance += debt.DebtedAmount
 		} else {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
@@ -137,7 +135,7 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 		balance.Balance += debt.ReceivedAmount
 		balance.OutInLay += debt.ReceivedAmount
 
-		debtor.Balance += debt.ReceivedAmount
+		debtor.Balance += debt.DebtedAmount
 	}
 
 	if err := debtsStorage.Create(ctx, debt); err != nil {
@@ -204,14 +202,14 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 
 	switch old.Type {
 	case TYPE_SELL:
-		balance.Balance += old.DebtedAmount
-		balance.InOutLay -= old.DebtedAmount
+		balance.Balance += old.ReceivedAmount
+		balance.InOutLay -= old.ReceivedAmount
 
 		debtor.Balance -= old.DebtedAmount
 	case TYPE_BUY:
-		if balance.Balance >= old.DebtedAmount {
-			balance.Balance -= old.DebtedAmount
-			balance.OutInLay -= old.DebtedAmount
+		if balance.Balance >= old.ReceivedAmount {
+			balance.Balance -= old.ReceivedAmount
+			balance.OutInLay -= old.ReceivedAmount
 
 			debtor.Balance -= old.DebtedAmount
 		} else {
@@ -221,19 +219,22 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 
 	switch debt.Type {
 	case TYPE_SELL:
-		if balance.Balance >= debt.DebtedAmount {
-			balance.Balance -= debt.DebtedAmount
-			balance.InOutLay += debt.DebtedAmount
+		if balance.Balance >= debt.ReceivedAmount {
+			balance.Balance -= debt.ReceivedAmount
+			balance.InOutLay += debt.ReceivedAmount
 
+			debt.ReceivedAmount = -debt.ReceivedAmount
 			debt.DebtedAmount = -debt.DebtedAmount
+
 			debtor.Balance += debt.DebtedAmount
 		} else {
 			return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
 		}
 
 	case TYPE_BUY:
-		balance.Balance += debt.DebtedAmount
-		balance.OutInLay += debt.DebtedAmount
+		balance.Balance += debt.ReceivedAmount
+		balance.OutInLay += debt.ReceivedAmount
+
 		debtor.Balance += debt.DebtedAmount
 	}
 
@@ -307,14 +308,14 @@ func (s *DebtsService) Delete(ctx context.Context, debtId int64) error {
 
 	switch debt.Type {
 	case TYPE_SELL:
-		balance.Balance += debt.DebtedAmount
-		balance.InOutLay -= debt.DebtedAmount
+		balance.Balance += debt.ReceivedAmount
+		balance.InOutLay -= debt.ReceivedAmount
 
 		debtor.Balance -= debt.DebtedAmount
 	case TYPE_BUY:
-		if balance.Balance >= debt.DebtedAmount {
-			balance.Balance -= debt.DebtedAmount
-			balance.OutInLay -= debt.DebtedAmount
+		if balance.Balance >= debt.ReceivedAmount {
+			balance.Balance -= debt.ReceivedAmount
+			balance.OutInLay -= debt.ReceivedAmount
 
 			debtor.Balance -= debt.DebtedAmount
 		} else {
