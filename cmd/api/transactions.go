@@ -80,6 +80,7 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 		DeliveredUserId:     payload.DeliveredUserId,
 		Phone:               payload.Phone,
 		Details:             payload.Details,
+		Type:                payload.Type,
 		Status:              1,
 	}
 
