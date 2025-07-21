@@ -227,8 +227,17 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				Type:          transaction.Type,
 			}
 
-			balance.Balance += tr.ReceivedAmount
-			balance.OutInLay += tr.ReceivedAmount
+			if transaction.Type == TYPE_SELL {
+				if balance.Balance < tr.ReceivedAmount {
+					tx.Rollback()
+					return fmt.Errorf(types.BALANCE_NO_ENOUGH_MONEY)
+				}
+				balance.Balance -= tr.ReceivedAmount
+				balance.InOutLay += tr.ReceivedAmount
+			} else {
+				balance.Balance += tr.ReceivedAmount
+				balance.OutInLay += tr.ReceivedAmount
+			}
 
 			if err := balancesStorage.Update(ctx, balance); err != nil {
 				tx.Rollback()
