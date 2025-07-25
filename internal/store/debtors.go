@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type Debtors struct {
@@ -65,11 +67,11 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	return nil
 }
 
-func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([]Debtors, error) {
+func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64, pagination types.Pagination) ([]Debtors, error) {
 	query := `
 				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-				FROM debtors WHERE company_id = $1
-			`
+				FROM debtors WHERE company_id = $1 	ORDER BY created_at DESC
+	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	var credits []Debtors
 	rows, err := s.db.QueryContext(
@@ -111,11 +113,11 @@ func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64) ([
 	return credits, nil
 }
 
-func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64) ([]Debtors, error) {
+func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64, pagination types.Pagination) ([]Debtors, error) {
 	query := `
 				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-				FROM debtors WHERE user_id = $1
-			`
+				FROM debtors WHERE user_id = $1 	ORDER BY created_at DESC
+	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	var credits []Debtors
 	rows, err := s.db.QueryContext(

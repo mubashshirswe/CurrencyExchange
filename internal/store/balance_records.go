@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type BalanceRecord struct {
@@ -116,10 +118,11 @@ func (s *BalanceRecordStorage) Update(ctx context.Context, balanceRecord *Balanc
 	return err
 }
 
-func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName string, from, to *string, fieldValue any) ([]BalanceRecord, error) {
+func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName string, from, to *string, fieldValue any, pagination types.Pagination) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
-				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2  AND amount != 0 AND created_at BETWEEN $3 AND $4 ORDER BY created_at DESC`
+				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2  AND amount != 0 AND created_at BETWEEN $3 AND $4 	ORDER BY created_at DESC
+	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -138,10 +141,11 @@ func (s *BalanceRecordStorage) GetByFieldAndDate(ctx context.Context, fieldName 
 	return s.FetchDataFromQuery(rows)
 }
 
-func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]BalanceRecord, error) {
+func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string, fieldValue any, pagination types.Pagination) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
-				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 AND amount != 0 ORDER BY created_at DESC`
+				FROM balance_records WHERE ` + fieldName + ` = $1 AND status != $2 AND amount != 0   	ORDER BY created_at DESC
+	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -158,11 +162,11 @@ func (s *BalanceRecordStorage) GetByField(ctx context.Context, fieldName string,
 	return s.FetchDataFromQuery(rows)
 }
 
-func (s *BalanceRecordStorage) Archived(ctx context.Context) ([]BalanceRecord, error) {
+func (s *BalanceRecordStorage) Archived(ctx context.Context, pagination types.Pagination) ([]BalanceRecord, error) {
 	query := `
 				SELECT id, amount, user_id, balance_id, company_id, transaction_id, debt_id, exchange_id, details, currency, type, created_at
-				FROM balance_records WHERE status = $1 AND amount != 0  ORDER BY created_at DESC`
-
+				FROM balance_records WHERE status = $1 AND amount != 0  	ORDER BY created_at DESC
+	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 	rows, err := s.db.QueryContext(
 		ctx,
 		query,

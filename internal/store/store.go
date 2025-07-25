@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"database/sql"
+
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 const (
@@ -26,18 +28,18 @@ type Storage struct {
 		Create(context.Context, *Exchange) error
 		Update(context.Context, *Exchange) error
 		GetById(context.Context, int64) (*Exchange, error)
-		GetByField(context.Context, string, any) ([]Exchange, error)
+		GetByField(context.Context, string, any, types.Pagination) ([]Exchange, error)
 		Delete(context.Context, int64) error
 		Archive(context.Context) error
-		Archived(context.Context) ([]Exchange, error)
+		Archived(context.Context, types.Pagination) ([]Exchange, error)
 	}
 
 	Debtors interface {
 		Create(context.Context, *Debtors) error
 		Update(context.Context, *Debtors) error
 		GetById(context.Context, int64) (*Debtors, error)
-		GetByUserId(context.Context, int64) ([]Debtors, error)
-		GetByCompanyId(context.Context, int64) ([]Debtors, error)
+		GetByUserId(context.Context, int64, types.Pagination) ([]Debtors, error)
+		GetByCompanyId(context.Context, int64, types.Pagination) ([]Debtors, error)
 		Delete(context.Context, int64) error
 	}
 
@@ -45,8 +47,8 @@ type Storage struct {
 		Create(context.Context, *Debts) error
 		Update(context.Context, *Debts) error
 		GetById(context.Context, int64) (*Debts, error)
-		GetByUserId(context.Context, int64) ([]Debts, error)
-		GetByDebtorId(context.Context, int64) ([]Debts, error)
+		GetByUserId(context.Context, int64, types.Pagination) ([]Debts, error)
+		GetByDebtorId(context.Context, int64, types.Pagination) ([]Debts, error)
 		Delete(context.Context, int64) error
 	}
 
@@ -72,22 +74,22 @@ type Storage struct {
 
 	BalanceRecords interface {
 		Create(context.Context, *BalanceRecord) error
-		GetByField(context.Context, string, any) ([]BalanceRecord, error)
-		GetByFieldAndDate(context.Context, string, *string, *string, any) ([]BalanceRecord, error)
+		GetByField(context.Context, string, any, types.Pagination) ([]BalanceRecord, error)
+		GetByFieldAndDate(context.Context, string, *string, *string, any, types.Pagination) ([]BalanceRecord, error)
 		Update(context.Context, *BalanceRecord) error
 		Delete(context.Context, int64) error
 		Archive(context.Context) error
-		Archived(context.Context) ([]BalanceRecord, error)
+		Archived(context.Context, types.Pagination) ([]BalanceRecord, error)
 	}
 
 	Transactions interface {
 		Create(context.Context, *Transaction) error
 		Update(context.Context, *Transaction) error
 		Delete(context.Context, *int64) error
-		GetByField(context.Context, string, any) ([]Transaction, error)
-		GetByFieldAndDate(context.Context, string, string, string, any) ([]Transaction, error)
+		GetByField(context.Context, string, any, types.Pagination) ([]Transaction, error)
+		GetByFieldAndDate(context.Context, string, string, string, any, types.Pagination) ([]Transaction, error)
 		Archive(context.Context) error
-		Archived(context.Context) ([]Transaction, error)
+		Archived(context.Context, types.Pagination) ([]Transaction, error)
 	}
 
 	Companies interface {

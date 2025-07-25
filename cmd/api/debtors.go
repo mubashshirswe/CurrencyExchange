@@ -102,7 +102,8 @@ func (app *application) UpdateDebtsHandler(w http.ResponseWriter, r *http.Reques
 }
 
 func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
-	debtors, err := app.store.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r))
+	app.LoadPaginationInfo(r, r.Context())
+	debtors, err := app.store.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -115,7 +116,8 @@ func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) GetDebtsByDebtorIdHandler(w http.ResponseWriter, r *http.Request) {
-	debtors, err := app.store.Debts.GetByDebtorId(r.Context(), getIDFromContext(r))
+	app.LoadPaginationInfo(r, r.Context())
+	debtors, err := app.store.Debts.GetByDebtorId(r.Context(), getIDFromContext(r), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

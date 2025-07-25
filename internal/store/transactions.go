@@ -212,12 +212,11 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 	return tr, nil
 }
 
-func (s *TransactionStorage) Archived(ctx context.Context) ([]Transaction, error) {
+func (s *TransactionStorage) Archived(ctx context.Context, pagination types.Pagination) ([]Transaction, error) {
 	query := `
 				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE status = $1 ORDER BY created_at DESC
-			`
+				FROM transactions WHERE status = $1   ORDER BY created_at DESC ` + fmt.Sprintf("OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -228,12 +227,11 @@ func (s *TransactionStorage) Archived(ctx context.Context) ([]Transaction, error
 	return s.ConvertRowsToObject(rows, err)
 }
 
-func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Transaction, error) {
+func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
 	query := `
 				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND status != $2 ORDER BY created_at DESC
-			`
+				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND status != $2   ORDER BY created_at DESC ` + fmt.Sprintf("OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -245,12 +243,11 @@ func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, f
 	return s.ConvertRowsToObject(rows, err)
 }
 
-func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any) ([]Transaction, error) {
+func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
 	query := `
 				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 AND status != $4 ORDER BY created_at DESC
-			`
+				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 AND status != $4  ` + fmt.Sprintf("ORDER BY created_at DESC OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,

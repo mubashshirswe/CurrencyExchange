@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type Exchange struct {
@@ -103,11 +105,12 @@ func (s *ExchangeStorage) Update(ctx context.Context, exchange *Exchange) error 
 	return err
 }
 
-func (s *ExchangeStorage) Archived(ctx context.Context) ([]Exchange, error) {
+func (s *ExchangeStorage) Archived(ctx context.Context, pagination types.Pagination) ([]Exchange, error) {
 	query := `
 				SELECT id, received_money, received_currency, selled_money,
 				selled_currency, user_id, company_id, details, created_at 
-				FROM exchanges WHERE status = $1  ORDER BY created_at DESC`
+				FROM exchanges WHERE status = $1  	ORDER BY created_at DESC
+	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,
@@ -147,11 +150,11 @@ func (s *ExchangeStorage) Archived(ctx context.Context) ([]Exchange, error) {
 	return exchanges, nil
 }
 
-func (s *ExchangeStorage) GetByField(ctx context.Context, fieldName string, fieldValue any) ([]Exchange, error) {
+func (s *ExchangeStorage) GetByField(ctx context.Context, fieldName string, fieldValue any, pagination types.Pagination) ([]Exchange, error) {
 	query := `
 				SELECT id, received_money, received_currency, selled_money,
 				selled_currency, user_id, company_id, details, created_at 
-				FROM exchanges WHERE status != $1 AND` + fmt.Sprintf(" %v = %v ", fieldName, fieldValue)
+				FROM exchanges WHERE status != $1 AND ` + fmt.Sprintf(" %v = %v ORDER BY created_at DESC OFFSET %v LIMIT %v", fieldName, fieldValue, pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(
 		ctx,

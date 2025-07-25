@@ -171,7 +171,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 	balanceRecordsStorage := store.NewBalanceRecordStorage(tx)
 	transactionsStorage := store.NewTransactionStorage(tx)
 
-	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", transaction.ID)
+	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", transaction.ID, types.Pagination{Limit: 100, Offset: 0})
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -310,7 +310,7 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 		return err
 	}
 
-	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", tran.ID)
+	records, err := balanceRecordsStorage.GetByField(ctx, "transaction_id", tran.ID, types.Pagination{Limit: 100, Offset: 0})
 	if err != nil {
 		tx.Rollback()
 		return err
@@ -354,8 +354,8 @@ func (s *TransactionService) Delete(ctx context.Context, id *int64) error {
 	return nil
 }
 
-func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
-	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId)
+func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64, pagination types.Pagination) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId, pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -415,8 +415,8 @@ func (s *TransactionService) GetByCompanyId(ctx context.Context, companyId int64
 	return response, nil
 }
 
-func (s *TransactionService) GetByField(ctx context.Context, fieldName string, value any) ([]map[string]interface{}, error) {
-	trans, err := s.store.Transactions.GetByField(ctx, fieldName, value)
+func (s *TransactionService) GetByField(ctx context.Context, fieldName string, value any, pagination types.Pagination) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.GetByField(ctx, fieldName, value, pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -468,8 +468,8 @@ func (s *TransactionService) GetByField(ctx context.Context, fieldName string, v
 	return response, nil
 }
 
-func (s *TransactionService) Archived(ctx context.Context) ([]map[string]interface{}, error) {
-	trans, err := s.store.Transactions.Archived(ctx)
+func (s *TransactionService) Archived(ctx context.Context, pagination types.Pagination) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.Archived(ctx, pagination)
 	if err != nil {
 		return nil, err
 	}
@@ -515,8 +515,8 @@ func (s *TransactionService) Archived(ctx context.Context) ([]map[string]interfa
 	return response, nil
 }
 
-func (s *TransactionService) GetInfos(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
-	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId)
+func (s *TransactionService) GetInfos(ctx context.Context, companyId int64, pagination types.Pagination) ([]map[string]interface{}, error) {
+	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId, pagination)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR OCCURRED WHILE Transactions.GetByField %v", err)
 	}

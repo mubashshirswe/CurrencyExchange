@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,9 +13,11 @@ import (
 	"github.com/mubashshir3767/currencyExchange/internal/service"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/store/cache"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type application struct {
+	Pagination types.Pagination
 	config     config
 	store      store.Storage
 	service    service.Service
@@ -164,4 +168,26 @@ func getIDFromContext(r *http.Request) int64 {
 	}
 
 	return ID
+}
+
+func (app *application) LoadPaginationInfo(r *http.Request, ctx context.Context) {
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+	app.Pagination.Page = page
+
+	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+	app.Pagination.Limit = limit
+
+	offset := (page - 1) * limit
+	app.Pagination.Offset = offset
+
+	userID, _ := ctx.Value(UserKey).(int)
+	app.Pagination.UserId = int64(userID)
+
+	log.Printf("pagination  page: %v,  limit = %v", app.Pagination.Limit, app.Pagination.Offset)
 }

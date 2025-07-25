@@ -34,12 +34,13 @@ func (app *application) CreateBalanceRecordHandler(w http.ResponseWriter, r *htt
 
 func (app *application) GetBalanceRecordsByUserIdHandler(w http.ResponseWriter, r *http.Request) {
 	var payload FieldRequestPayload
+	app.LoadPaginationInfo(r, r.Context())
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	records, err := app.store.BalanceRecords.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
+	records, err := app.store.BalanceRecords.GetByField(r.Context(), payload.FieldName, payload.FieldValue, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -53,12 +54,14 @@ func (app *application) GetBalanceRecordsByUserIdHandler(w http.ResponseWriter, 
 
 func (app *application) GetBalanceRecordsHandler(w http.ResponseWriter, r *http.Request) {
 	var payload FieldRequestPayload
+	app.LoadPaginationInfo(r, r.Context())
+
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	records, err := app.store.BalanceRecords.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
+	records, err := app.store.BalanceRecords.GetByField(r.Context(), payload.FieldName, payload.FieldValue, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -117,7 +120,9 @@ func (app *application) ArchiveBalanceRecordsHandler(w http.ResponseWriter, r *h
 }
 
 func (app *application) ArchivedBalanceRecordsHandler(w http.ResponseWriter, r *http.Request) {
-	balanceRecords, err := app.store.BalanceRecords.Archived(r.Context())
+	app.LoadPaginationInfo(r, r.Context())
+	balanceRecords, err := app.store.BalanceRecords.Archived(r.Context(), app.Pagination)
+
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

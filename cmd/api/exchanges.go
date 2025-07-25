@@ -47,12 +47,14 @@ func (app *application) CreateExchangeHandler(w http.ResponseWriter, r *http.Req
 
 func (app *application) GetExchangesHandler(w http.ResponseWriter, r *http.Request) {
 	var payload FieldRequestPayload
+	app.LoadPaginationInfo(r, r.Context())
+
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	records, err := app.store.Exchanges.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
+	records, err := app.store.Exchanges.GetByField(r.Context(), payload.FieldName, payload.FieldValue, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -120,7 +122,9 @@ func (app *application) ArchiveExchangesHandler(w http.ResponseWriter, r *http.R
 }
 
 func (app *application) ArchivedExchangesHandler(w http.ResponseWriter, r *http.Request) {
-	Exchanges, err := app.store.Exchanges.Archived(r.Context())
+	app.LoadPaginationInfo(r, r.Context())
+
+	Exchanges, err := app.store.Exchanges.Archived(r.Context(), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

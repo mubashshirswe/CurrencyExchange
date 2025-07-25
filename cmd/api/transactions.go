@@ -118,13 +118,14 @@ func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *htt
 }
 
 func (app *application) GetTransactionsByFieldHandler(w http.ResponseWriter, r *http.Request) {
+	app.LoadPaginationInfo(r, r.Context())
 	var payload FieldRequestPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	transactions, err := app.service.Transactions.GetByField(r.Context(), payload.FieldName, payload.FieldValue)
+	transactions, err := app.service.Transactions.GetByField(r.Context(), payload.FieldName, payload.FieldValue, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -137,7 +138,8 @@ func (app *application) GetTransactionsByFieldHandler(w http.ResponseWriter, r *
 }
 
 func (app *application) GetTransactionsCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
-	transactions, err := app.service.Transactions.GetByCompanyId(r.Context(), getIDFromContext(r))
+	app.LoadPaginationInfo(r, r.Context())
+	transactions, err := app.service.Transactions.GetByCompanyId(r.Context(), getIDFromContext(r), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -150,7 +152,8 @@ func (app *application) GetTransactionsCompanyIdHandler(w http.ResponseWriter, r
 }
 
 func (app *application) GetInfosByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
-	transactions, err := app.service.Transactions.GetInfos(r.Context(), getIDFromContext(r))
+	app.LoadPaginationInfo(r, r.Context())
+	transactions, err := app.service.Transactions.GetInfos(r.Context(), getIDFromContext(r), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -163,13 +166,14 @@ func (app *application) GetInfosByCompanyIdHandler(w http.ResponseWriter, r *htt
 }
 
 func (app *application) GetTransactionsByFieldAndDateHandler(w http.ResponseWriter, r *http.Request) {
+	app.LoadPaginationInfo(r, r.Context())
 	var payload FieldRequestPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	transactions, err := app.store.Transactions.GetByFieldAndDate(r.Context(), payload.FieldName, *payload.From, *payload.To, payload.FieldValue)
+	transactions, err := app.store.Transactions.GetByFieldAndDate(r.Context(), payload.FieldName, *payload.From, *payload.To, payload.FieldValue, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -194,7 +198,8 @@ func (app *application) ArchiveTransactionsHandler(w http.ResponseWriter, r *htt
 }
 
 func (app *application) ArchivedTransactionsHandler(w http.ResponseWriter, r *http.Request) {
-	transactions, err := app.service.Transactions.Archived(r.Context())
+	app.LoadPaginationInfo(r, r.Context())
+	transactions, err := app.service.Transactions.Archived(r.Context(), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

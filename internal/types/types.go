@@ -26,3 +26,14 @@ type DeliveredOutcomes struct {
 	DeliveredAmount   int64  `json:"delivered_amount"`
 	DeliveredCurrency string `json:"delivered_currency"`
 }
+
+type Pagination struct {
+	Page                int         `json:"page"`
+	Limit               int         `json:"limit"`
+	Data                interface{} `json:"data"`
+	Offset              int         `json:"offset"`
+	TaskId              int         `json:"taskId"`
+	ProductCollectionId int         `json:"productCollectionId"`
+	UserId              int64       `json:"user_id"`
+	Language            *string     `json:"language"`
+}
