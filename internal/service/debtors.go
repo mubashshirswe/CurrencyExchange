@@ -30,7 +30,7 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 			"id":         debtor.ID,
 			"balance":    debtor.Balance,
 			"currency":   debtor.Currency,
-			"user":       GetUser(users, debtor.UserID),
+			"username":   GetUser(users, debtor.UserID).Username,
 			"user_id":    debtor.UserID,
 			"company_id": debtor.CompanyID,
 			"phone":      debtor.Phone,
