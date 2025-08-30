@@ -1,0 +1,43 @@
+package service
+
+import (
+	"context"
+
+	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
+)
+
+type DebtorsService struct {
+	store store.Storage
+}
+
+func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pagination types.Pagination) (map[int]interface{}, error) {
+
+	debtors, err := s.store.Debtors.GetByCompanyId(ctx, companyId, pagination)
+	if err != nil {
+		return nil, err
+	}
+
+	res := map[int]interface{}{}
+
+	users, err := s.store.Users.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, debtor := range debtors {
+		res[i] = map[string]interface{}{
+			"id":         debtor.ID,
+			"balance":    debtor.Balance,
+			"currency":   debtor.Currency,
+			"user":       GetUser(users, debtor.UserID),
+			"user_id":    debtor.UserID,
+			"company_id": debtor.CompanyID,
+			"phone":      debtor.Phone,
+			"full_name":  debtor.FullName,
+			"created_at": debtor.CreatedAt,
+		}
+	}
+
+	return res, nil
+}

@@ -27,6 +27,11 @@ type Service struct {
 		Update(context.Context, *store.Debts) error
 		Delete(context.Context, int64) error
 	}
+
+	Debtors interface {
+		GetByCompanyId(context.Context, int64, types.Pagination) (map[int]interface{}, error)
+	}
+
 	BalanceRecords interface {
 		PerformBalanceRecord(context.Context, types.BalanceRecordPayload) error
 		RollbackBalanceRecord(context.Context, int64) error
@@ -47,6 +52,7 @@ type Service struct {
 
 func NewService(store store.Storage) Service {
 	return Service{
+		Debtors:        &DebtorsService{store: store},
 		Balances:       &BalanceService{store: store},
 		Exchanges:      &ExchangeService{store: store},
 		BalanceRecords: &BalanceRecordService{store: store},
