@@ -30,9 +30,9 @@ func NewExchangeStorage(db DBTX) *ExchangeStorage {
 	return &ExchangeStorage{db: db}
 }
 
-func (s *ExchangeStorage) Archive(ctx context.Context) error {
-	query := `UPDATE exchanges SET created_at = $1, status = $2 WHERE status = $3`
-	rows, err := s.db.ExecContext(ctx, query, time.Now(), STATUS_ARCHIVED, STATUS_CREATED)
+func (s *ExchangeStorage) Archive(ctx context.Context, companyId int64) error {
+	query := `UPDATE exchanges SET status = $1 WHERE company_id = $2`
+	rows, err := s.db.ExecContext(ctx, query, STATUS_ARCHIVED, companyId)
 	if err != nil {
 		return err
 	}

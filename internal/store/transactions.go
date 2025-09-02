@@ -37,9 +37,9 @@ func NewTransactionStorage(db DBTX) *TransactionStorage {
 	return &TransactionStorage{db: db}
 }
 
-func (s *TransactionStorage) Archive(ctx context.Context) error {
-	query := `UPDATE transactions SET created_at = $1, status = $2 WHERE status = $3`
-	rows, err := s.db.ExecContext(ctx, query, time.Now(), STATUS_ARCHIVED, STATUS_COMPLETED)
+func (s *TransactionStorage) Archive(ctx context.Context, companyId int64) error {
+	query := `UPDATE transactions SET status = $1 WHERE status = $2 and company_id $3`
+	rows, err := s.db.ExecContext(ctx, query, STATUS_ARCHIVED, STATUS_COMPLETED, companyId)
 	if err != nil {
 		return err
 	}

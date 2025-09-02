@@ -84,7 +84,7 @@ func (app *application) mount() *chi.Mux {
 			r.Route("/exchanges", func(r chi.Router) {
 				r.Post("/", app.CreateExchangeHandler)
 				r.Post("/filter", app.GetExchangesHandler)
-				r.Post("/archive", app.ArchiveExchangesHandler)
+				r.Post("/archive/{id}", app.ArchiveExchangesHandler)
 				r.Get("/archived", app.ArchivedExchangesHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Put("/", app.UpdateExchangeHandler)
@@ -95,7 +95,7 @@ func (app *application) mount() *chi.Mux {
 			r.Route("/balance-records", func(r chi.Router) {
 				r.Post("/", app.CreateBalanceRecordHandler)
 				r.Post("/filter", app.GetBalanceRecordsHandler)
-				r.Post("/archive", app.ArchiveBalanceRecordsHandler)
+				r.Post("/archive/{id}", app.ArchiveBalanceRecordsHandler)
 				r.Get("/archived", app.ArchivedBalanceRecordsHandler)
 				r.Route("/{id}", func(r chi.Router) {
 					r.Put("/", app.UpdateBalanceRecordHandler)
@@ -120,7 +120,7 @@ func (app *application) mount() *chi.Mux {
 				r.Post("/create", app.CreateTransactionHandler)
 				r.Post("/complete", app.CompleteTransactionHandler)
 				r.Get("/show/process/{id}", app.GetTransactionsCompanyIdHandler)
-				r.Post("/archive", app.ArchiveTransactionsHandler)
+				r.Post("/archive/{id}", app.ArchiveTransactionsHandler)
 				r.Get("/archived", app.ArchivedTransactionsHandler)
 				r.Get("/show/info/{id}", app.GetInfosByCompanyIdHandler)
 				r.Post("/fetch.by.field", app.GetTransactionsByFieldHandler)

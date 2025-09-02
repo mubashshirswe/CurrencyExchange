@@ -30,7 +30,7 @@ type Storage struct {
 		GetById(context.Context, int64) (*Exchange, error)
 		GetByField(context.Context, string, any, types.Pagination) ([]Exchange, error)
 		Delete(context.Context, int64) error
-		Archive(context.Context) error
+		Archive(context.Context, int64) error
 		Archived(context.Context, types.Pagination) ([]Exchange, error)
 	}
 
@@ -78,7 +78,7 @@ type Storage struct {
 		GetByFieldAndDate(context.Context, string, *string, *string, any, types.Pagination) ([]BalanceRecord, error)
 		Update(context.Context, *BalanceRecord) error
 		Delete(context.Context, int64) error
-		Archive(context.Context) error
+		Archive(context.Context, int64) error
 		Archived(context.Context, types.Pagination) ([]BalanceRecord, error)
 	}
 
@@ -88,7 +88,7 @@ type Storage struct {
 		Delete(context.Context, *int64) error
 		GetByField(context.Context, string, any, types.Pagination) ([]Transaction, error)
 		GetByFieldAndDate(context.Context, string, string, string, any, types.Pagination) ([]Transaction, error)
-		Archive(context.Context) error
+		Archive(context.Context, int64) error
 		Archived(context.Context, types.Pagination) ([]Transaction, error)
 	}
 

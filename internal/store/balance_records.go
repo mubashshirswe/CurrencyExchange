@@ -35,9 +35,9 @@ func NewBalanceRecordStorage(db DBTX) *BalanceRecordStorage {
 	return &BalanceRecordStorage{db: db}
 }
 
-func (s *BalanceRecordStorage) Archive(ctx context.Context) error {
-	query := `UPDATE balance_records SET created_at = $1, status = $2`
-	rows, err := s.db.ExecContext(ctx, query, time.Now(), STATUS_ARCHIVED)
+func (s *BalanceRecordStorage) Archive(ctx context.Context, companyId int64) error {
+	query := `UPDATE balance_records SET status = $1 WHERE company_id = $2`
+	rows, err := s.db.ExecContext(ctx, query, STATUS_ARCHIVED, companyId)
 	if err != nil {
 		return err
 	}
