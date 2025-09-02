@@ -34,8 +34,9 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 		var fullname string
 		if len(debts) > 0 {
 			fullname = *debts[0].Details
+		} else {
+			fullname = ""
 		}
-		fullname = ""
 
 		res = append(res, map[string]interface{}{
 			"id":         debtor.ID,
