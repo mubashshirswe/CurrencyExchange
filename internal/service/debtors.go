@@ -31,10 +31,11 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 			return nil, err
 		}
 
-		var fullname *string
+		var fullname string
 		if len(debts) > 0 {
-			fullname = debts[0].Details
+			fullname = *debts[0].Details
 		}
+		fullname = ""
 
 		res = append(res, map[string]interface{}{
 			"id":         debtor.ID,
