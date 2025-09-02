@@ -24,6 +24,11 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 	}
 
 	res := make([]map[string]interface{}, 0, len(debtors))
+	debts, err := s.store.Debts.GetByDebtorId(context.Background(), debtors[0].ID, pagination)
+	if err != nil {
+		return nil, err
+	}
+
 	for _, debtor := range debtors {
 		res = append(res, map[string]interface{}{
 			"id":         debtor.ID,
@@ -33,7 +38,7 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 			"user_id":    debtor.UserID,
 			"company_id": debtor.CompanyID,
 			"phone":      debtor.Phone,
-			"full_name":  debtor.FullName,
+			"full_name":  debts[0].Details,
 			"created_at": debtor.CreatedAt,
 		})
 	}
