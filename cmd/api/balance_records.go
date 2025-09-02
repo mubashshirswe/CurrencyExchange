@@ -108,7 +108,9 @@ func (app *application) DeleteBalanceRecordHandler(w http.ResponseWriter, r *htt
 }
 
 func (app *application) ArchiveBalanceRecordsHandler(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value("UserID").(int64)
+	userId := r.Context().Value(UserKey).(int64)
+	println("userId", userId)
+
 	user, err := app.store.Users.GetById(r.Context(), &userId)
 	if err != nil {
 		app.internalServerError(w, r, err)

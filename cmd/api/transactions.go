@@ -186,7 +186,9 @@ func (app *application) GetTransactionsByFieldAndDateHandler(w http.ResponseWrit
 }
 
 func (app *application) ArchiveTransactionsHandler(w http.ResponseWriter, r *http.Request) {
-	userId := r.Context().Value("UserID").(int64)
+	userId := r.Context().Value(UserKey).(int64)
+	println("userId", userId)
+
 	user, err := app.store.Users.GetById(r.Context(), &userId)
 	if err != nil {
 		app.internalServerError(w, r, err)
