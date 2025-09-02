@@ -109,7 +109,13 @@ func (app *application) DeleteExchangeHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (app *application) ArchiveExchangesHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.store.Exchanges.Archive(r.Context(), getIDFromContext(r)); err != nil {
+	userId := r.Context().Value("UserID").(int64)
+	user, err := app.store.Users.GetById(r.Context(), &userId)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if err := app.store.Exchanges.Archive(r.Context(), user.CompanyId); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}

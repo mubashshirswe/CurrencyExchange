@@ -186,7 +186,13 @@ func (app *application) GetTransactionsByFieldAndDateHandler(w http.ResponseWrit
 }
 
 func (app *application) ArchiveTransactionsHandler(w http.ResponseWriter, r *http.Request) {
-	if err := app.store.Transactions.Archive(r.Context(), getIDFromContext(r)); err != nil {
+	userId := r.Context().Value("UserID").(int64)
+	user, err := app.store.Users.GetById(r.Context(), &userId)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+	if err := app.store.Transactions.Archive(r.Context(), user.CompanyId); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
