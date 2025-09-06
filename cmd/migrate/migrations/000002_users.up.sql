@@ -1,6 +1,6 @@
 create table if not exists users(
     id bigserial PRIMARY KEY,
-    phone varchar(255) unique not null,
+    phone varchar(255) not null,
     role bigint not null,
     avatar varchar(255) default null,
     username varchar(255) not null,
