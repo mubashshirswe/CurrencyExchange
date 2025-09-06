@@ -157,11 +157,12 @@ func (s *UserStorage) Update(ctx context.Context, user *User) error {
 }
 
 func (s *UserStorage) Delete(ctx context.Context, id *int64) error {
-	query := `DELETE FROM users WHERE id = $1`
+	query := `UPDATE users SET phone = $1 WHERE id = $2`
 
 	res, err := s.db.ExecContext(
 		ctx,
 		query,
+		"",
 		id,
 	)
 
