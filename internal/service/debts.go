@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
@@ -178,6 +179,8 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 		return err
 	}
 	defer tx.Rollback()
+
+	log.Println("DEBT UPDATE==============    ", debt)
 
 	debtsStorage := store.NewDebtsStorage(tx)
 	debtorsStorage := store.NewDebtorsStorage(tx)
