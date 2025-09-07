@@ -227,8 +227,8 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 			balance.Balance -= debt.ReceivedAmount
 			balance.InOutLay += debt.ReceivedAmount
 
-			debt.ReceivedAmount = -debt.ReceivedAmount
-			debt.DebtedAmount = -debt.DebtedAmount
+			// debt.ReceivedAmount = debt.ReceivedAmount
+			// debt.DebtedAmount = debt.DebtedAmount
 
 			debtor.Balance += debt.DebtedAmount
 		} else {
