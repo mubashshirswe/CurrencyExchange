@@ -12,9 +12,9 @@ type BalanceRecordPayload struct {
 }
 
 type TransactionComplete struct {
-	TransactionID      int64 `json:"transactionID"`
-	DeliveredUserId    int64 `json:"delivered_user_id"`
-	RecievedServiceFee int64 `json:"received_service_fee"`
+	TransactionID      int64  `json:"transactionID"`
+	DeliveredUserId    int64  `json:"delivered_user_id"`
+	RecievedServiceFee string `json:"received_service_fee"`
 }
 
 type ReceivedIncomes struct {
