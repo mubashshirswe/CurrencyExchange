@@ -36,6 +36,8 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
+	log.Println("TRANSACTION:   ", payload)
+
 	transaction := &store.Transaction{
 		MarkedServiceFee:    payload.MarkedServiceFee,
 		DeliveredServiceFee: payload.DeliveredServiceFee,
