@@ -33,7 +33,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 
 	jsonB, _ := json.Marshal(payload)
-	log.Println("TRANSACTION payload:   ", jsonB)
+	log.Println("TRANSACTION payload:   ", string(jsonB))
 
 	transaction := &store.Transaction{
 		MarkedServiceFee:    payload.MarkedServiceFee,
@@ -51,7 +51,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 
 	transactionb, _ := json.Marshal(transaction)
-	log.Println("TRANSACTION :   ", transactionb)
+	log.Println("TRANSACTION :   ", string(transactionb))
 
 	if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
 		app.internalServerError(w, r, err)
