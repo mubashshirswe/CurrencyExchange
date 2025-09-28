@@ -20,7 +20,7 @@ type Transaction struct {
 	DeliveredOutcomes   []types.DeliveredOutcomes `json:"delivered_outcomes"`
 	DeliveredCompanyId  int64                     `json:"delivered_company_id"`
 	DeliveredUserId     *int64                    `json:"delivered_user_id"`
-	DeliveredServiceFee *string                   `json:"delivered_service_fee"`
+	DeliveredServiceFee *int64                    `json:"delivered_service_fee"`
 	Phone               string                    `json:"phone"`
 	Details             string                    `json:"details"`
 	Status              int64                     `json:"status"`

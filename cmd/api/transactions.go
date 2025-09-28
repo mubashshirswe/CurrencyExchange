@@ -11,7 +11,7 @@ import (
 
 type TransactionPayload struct {
 	MarkedServiceFee    *string                   `json:"marked_service_fee"`
-	DeliveredServiceFee *string                   `json:"delivered_service_fee"`
+	DeliveredServiceFee *int64                    `json:"delivered_service_fee"`
 	ReceivedIncomes     []types.ReceivedIncomes   `json:"received_incomes"`
 	DeliveredOutcomes   []types.DeliveredOutcomes `json:"delivered_outcomes"`
 	ReceivedCompanyId   int64                     `json:"received_company_id"`
