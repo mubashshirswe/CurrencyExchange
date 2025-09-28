@@ -26,7 +26,7 @@ type TransactionPayload struct {
 }
 
 func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.Request) {
-	var payload TransactionPayload
+	var payload map[string]interface{}
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
@@ -35,30 +35,30 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 	jsonB, _ := json.Marshal(payload)
 	log.Println("TRANSACTION payload:   ", string(jsonB))
 
-	transaction := &store.Transaction{
-		MarkedServiceFee:    payload.MarkedServiceFee,
-		DeliveredServiceFee: payload.DeliveredServiceFee,
-		ReceivedIncomes:     payload.ReceivedIncomes,
-		DeliveredOutcomes:   payload.DeliveredOutcomes,
-		ReceivedCompanyId:   payload.ReceivedCompanyId,
-		DeliveredCompanyId:  payload.DeliveredCompanyId,
-		ReceivedUserId:      payload.ReceivedUserId,
-		DeliveredUserId:     payload.DeliveredUserId,
-		Phone:               payload.Phone,
-		Details:             payload.Details,
-		Type:                payload.Type,
-		Status:              1,
-	}
+	// transaction := &store.Transaction{
+	// 	MarkedServiceFee:    payload.MarkedServiceFee,
+	// 	DeliveredServiceFee: payload.DeliveredServiceFee,
+	// 	ReceivedIncomes:     payload.ReceivedIncomes,
+	// 	DeliveredOutcomes:   payload.DeliveredOutcomes,
+	// 	ReceivedCompanyId:   payload.ReceivedCompanyId,
+	// 	DeliveredCompanyId:  payload.DeliveredCompanyId,
+	// 	ReceivedUserId:      payload.ReceivedUserId,
+	// 	DeliveredUserId:     payload.DeliveredUserId,
+	// 	Phone:               payload.Phone,
+	// 	Details:             payload.Details,
+	// 	Type:                payload.Type,
+	// 	Status:              1,
+	// }
 
-	transactionb, _ := json.Marshal(transaction)
-	log.Println("TRANSACTION :   ", string(transactionb))
+	// transactionb, _ := json.Marshal(transaction)
+	// log.Println("TRANSACTION :   ", string(transactionb))
 
-	if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
+	// if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
+	// 	app.internalServerError(w, r, err)
+	// 	return
+	// }
 
-	if err := app.writeResponse(w, http.StatusOK, transaction); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, ""); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
