@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -31,12 +32,8 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err := Validate.Struct(payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	log.Println("TRANSACTION:   ", payload)
+	jsonB, _ := json.Marshal(payload)
+	log.Println("TRANSACTION payload:   ", jsonB)
 
 	transaction := &store.Transaction{
 		MarkedServiceFee:    payload.MarkedServiceFee,
@@ -53,7 +50,8 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		Status:              1,
 	}
 
-	log.Println("TRANSACTION:   ", transaction)
+	transactionb, _ := json.Marshal(transaction)
+	log.Println("TRANSACTION :   ", transactionb)
 
 	if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
 		app.internalServerError(w, r, err)
