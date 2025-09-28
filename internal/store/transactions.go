@@ -13,14 +13,14 @@ import (
 
 type Transaction struct {
 	ID                  int64                     `json:"id"`
-	MarkedServiceFee    string                    `json:"marked_service_fee"`
+	MarkedServiceFee    *int64                    `json:"marked_service_fee"`
 	ReceivedCompanyId   int64                     `json:"received_company_id"`
 	ReceivedUserId      int64                     `json:"received_user_id"`
 	ReceivedIncomes     []types.ReceivedIncomes   `json:"received_incomes"`
 	DeliveredOutcomes   []types.DeliveredOutcomes `json:"delivered_outcomes"`
 	DeliveredCompanyId  int64                     `json:"delivered_company_id"`
 	DeliveredUserId     *int64                    `json:"delivered_user_id"`
-	DeliveredServiceFee *int64                    `json:"delivered_service_fee"`
+	DeliveredServiceFee string                    `json:"delivered_service_fee"`
 	Phone               string                    `json:"phone"`
 	Details             string                    `json:"details"`
 	Status              int64                     `json:"status"`
