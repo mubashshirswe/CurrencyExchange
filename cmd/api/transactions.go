@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
@@ -49,6 +50,8 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 		Type:                payload.Type,
 		Status:              1,
 	}
+
+	log.Println("TRANSACTION:   ", transaction)
 
 	if err := app.service.Transactions.PerformTransaction(r.Context(), transaction); err != nil {
 		app.internalServerError(w, r, err)
