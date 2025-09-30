@@ -12,21 +12,20 @@ import (
 )
 
 type Transaction struct {
-	ID                  int64                     `json:"id"`
-	MarkedServiceFee    *int64                    `json:"marked_service_fee"`
-	ReceivedCompanyId   int64                     `json:"received_company_id"`
-	ReceivedUserId      int64                     `json:"received_user_id"`
-	ReceivedIncomes     []types.ReceivedIncomes   `json:"received_incomes"`
-	DeliveredOutcomes   []types.DeliveredOutcomes `json:"delivered_outcomes"`
-	DeliveredCompanyId  int64                     `json:"delivered_company_id"`
-	DeliveredUserId     *int64                    `json:"delivered_user_id"`
-	DeliveredServiceFee string                    `json:"delivered_service_fee"`
-	Phone               string                    `json:"phone"`
-	Details             string                    `json:"details"`
-	Status              int64                     `json:"status"`
-	Type                int64                     `json:"type"`
-	CreatedAt           time.Time                 `json:"-"`
-	CreatedAtFormatted  string                    `json:"created_at"`
+	ID                 int64                     `json:"id"`
+	ReceivedCompanyId  int64                     `json:"received_company_id"`
+	ReceivedUserId     int64                     `json:"received_user_id"`
+	ReceivedIncomes    []types.ReceivedIncomes   `json:"received_incomes"`
+	DeliveredOutcomes  []types.DeliveredOutcomes `json:"delivered_outcomes"`
+	DeliveredCompanyId int64                     `json:"delivered_company_id"`
+	DeliveredUserId    *int64                    `json:"delivered_user_id"`
+	ServiceFee         string                    `json:"service_fee"`
+	Phone              string                    `json:"phone"`
+	Details            string                    `json:"details"`
+	Status             int64                     `json:"status"`
+	Type               int64                     `json:"type"`
+	CreatedAt          time.Time                 `json:"-"`
+	CreatedAtFormatted string                    `json:"created_at"`
 }
 
 type TransactionStorage struct {
@@ -69,15 +68,14 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 
 	query := `
 			INSERT INTO transactions(
-				marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
+				service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at`
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at`
 
 	err = s.db.QueryRowContext(
 		ctx,
 		query,
-		tr.MarkedServiceFee,
-		tr.DeliveredServiceFee,
+		tr.ServiceFee,
 		receivedIncomesJSON,
 		deliveredOutcomesJSON,
 		tr.ReceivedCompanyId,
@@ -112,26 +110,24 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 
 	query := `	
 		UPDATE transactions SET
-			marked_service_fee = $1,
-			delivered_service_fee = $2,
-			received_incomes = $3,
-			delivered_outcomes = $4,
-			received_company_id = $5,
-			delivered_company_id = $6,
-			received_user_id = $7,
-			delivered_user_id = $8,
-			phone = $9,
-			details = $10,
-			status = $11,
-			type = $12
-		WHERE id = $13 AND status = $14
+			service_fee = $1,
+			received_incomes = $2,
+			delivered_outcomes = $3,
+			received_company_id = $4,
+			delivered_company_id = $5,
+			received_user_id = $6,
+			delivered_user_id = $7,
+			phone = $8,
+			details = $9,
+			status = $10,
+			type = $11
+		WHERE id = $11 AND status = $13
 	`
 
 	result, err := s.db.ExecContext(
 		ctx,
 		query,
-		tr.MarkedServiceFee,
-		tr.DeliveredServiceFee,
+		tr.ServiceFee,
 		receivedIncomesJSON,
 		deliveredOutcomesJSON,
 		tr.ReceivedCompanyId,
@@ -164,7 +160,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 
 func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
+				SELECT id, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE id = $1 AND status = $2 ORDER BY created_at DESC
 			`
@@ -180,8 +176,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 		STATUS_CREATED,
 	).Scan(
 		&tr.ID,
-		&tr.MarkedServiceFee,
-		&tr.DeliveredServiceFee,
+		&tr.ServiceFee,
 		&receivedIncomesJSON,
 		&deliveredOutcomesJSON,
 		&tr.ReceivedCompanyId,
@@ -214,7 +209,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 
 func (s *TransactionStorage) Archived(ctx context.Context, pagination types.Pagination) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
+				SELECT id, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE status = $1   ORDER BY created_at DESC ` + fmt.Sprintf("OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
@@ -229,7 +224,7 @@ func (s *TransactionStorage) Archived(ctx context.Context, pagination types.Pagi
 
 func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
+				SELECT id, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND status != $2   ORDER BY created_at DESC ` + fmt.Sprintf("OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
@@ -245,7 +240,7 @@ func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, f
 
 func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
 	query := `
-				SELECT id, marked_service_fee, delivered_service_fee, received_incomes, delivered_outcomes,
+				SELECT id, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 AND status != $4  ` + fmt.Sprintf("ORDER BY created_at DESC OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
@@ -299,8 +294,7 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 		tr := &Transaction{}
 		err := rows.Scan(
 			&tr.ID,
-			&tr.MarkedServiceFee,
-			&tr.DeliveredServiceFee,
+			&tr.ServiceFee,
 			&receivedIncomesJSON,
 			&deliveredOutcomesJSON,
 			&tr.ReceivedCompanyId,

@@ -26,17 +26,6 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 	res := make([]map[string]interface{}, 0, len(debtors))
 
 	for _, debtor := range debtors {
-		debts, err := s.store.Debts.GetByDebtorId(context.Background(), debtor.ID, pagination)
-		if err != nil {
-			return nil, err
-		}
-
-		var fullname string
-		if len(debts) > 0 {
-			fullname = *debts[0].Details
-		} else {
-			fullname = ""
-		}
 
 		res = append(res, map[string]interface{}{
 			"id":         debtor.ID,
@@ -46,7 +35,7 @@ func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, pa
 			"user_id":    debtor.UserID,
 			"company_id": debtor.CompanyID,
 			"phone":      debtor.Phone,
-			"full_name":  fullname,
+			"full_name":  debtor.FullName,
 			"created_at": debtor.CreatedAt,
 		})
 	}
