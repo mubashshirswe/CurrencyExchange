@@ -39,7 +39,7 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		if err != nil {
 			tx.Rollback()
 			if err == sql.ErrNoRows {
-				return err
+				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
 			} else {
 				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
 			}
