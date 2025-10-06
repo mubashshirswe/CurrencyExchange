@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
@@ -39,7 +40,8 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		if err != nil {
 			tx.Rollback()
 			if err == sql.ErrNoRows {
-				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v ReceivedUserId %v ReceivedCurrency %v", err, transaction, tr.ReceivedCurrency)
+				jsonTr, _ := json.Marshal(transaction)
+				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v ReceivedUserId %v", err, jsonTr)
 			} else {
 				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
 			}
