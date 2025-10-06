@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
@@ -41,10 +39,7 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		if err != nil {
 			tx.Rollback()
 			if err == sql.ErrNoRows {
-				jsonTr, _ := json.Marshal(transaction)
-				log.Println("TRANSACTION:  ")
-				log.Println(jsonTr)
-				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency  %v", err)
+				return fmt.Errorf("user %d does not have a balance for currency %s", transaction.ReceivedUserId, tr.ReceivedCurrency)
 			} else {
 				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
 			}
