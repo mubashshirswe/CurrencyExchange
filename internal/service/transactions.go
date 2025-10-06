@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
@@ -41,7 +42,9 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 			tx.Rollback()
 			if err == sql.ErrNoRows {
 				jsonTr, _ := json.Marshal(transaction)
-				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v ReceivedUserId %v", err, jsonTr)
+				log.Println("TRANSACTION:  ")
+				log.Println(jsonTr)
+				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency  %v", err)
 			} else {
 				return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.GetByUserIdAndCurrency %v", err)
 			}
