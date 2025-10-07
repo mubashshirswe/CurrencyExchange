@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
@@ -56,6 +58,10 @@ func (app *application) CreateDebtorTransactionHandler(w http.ResponseWriter, r 
 		app.badRequestResponse(w, r, err)
 		return
 	}
+
+	jsonPayload, _ := json.Marshal(payload)
+	log.Println("PAYLOAD: ")
+	log.Println(string(jsonPayload))
 
 	if err := app.service.Debts.Transaction(r.Context(), payload); err != nil {
 		app.internalServerError(w, r, err)
