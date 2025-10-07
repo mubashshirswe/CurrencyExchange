@@ -65,7 +65,7 @@ func (app *application) CreateUserHandler(w http.ResponseWriter, r *http.Request
 		CompanyId: user.CompanyId,
 		InOutLay:  0,
 		OutInLay:  0,
-		Currency:  "SUM",
+		Currency:  "UZS",
 	}); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
