@@ -180,9 +180,9 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 
 	// Process incomes
 	for _, tr := range debt.ReceivedIncomes {
-		if tr.ReceivedCurrency != debt.DebtedCurrency {
-			return fmt.Errorf("income currency %s does not match debt currency %s", tr.ReceivedCurrency, debt.DebtedCurrency)
-		}
+		// if tr.ReceivedCurrency != debt.DebtedCurrency {
+		// 	return fmt.Errorf("income currency %s does not match debt currency %s", tr.ReceivedCurrency, debt.DebtedCurrency)
+		// }
 
 		balance, err := balancesStorage.GetByUserIdAndCurrency(ctx, &debt.UserID, tr.ReceivedCurrency)
 		if err != nil {
@@ -316,9 +316,9 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 	}
 
 	for _, tr := range debt.ReceivedIncomes {
-		if tr.ReceivedCurrency != debt.DebtedCurrency {
-			return fmt.Errorf("new income currency %s does not match new debt currency %s", tr.ReceivedCurrency, debt.DebtedCurrency)
-		}
+		// if tr.ReceivedCurrency != debt.DebtedCurrency {
+		// 	return fmt.Errorf("new income currency %s does not match new debt currency %s", tr.ReceivedCurrency, debt.DebtedCurrency)
+		// }
 
 		originalPositiveReceived := tr.ReceivedAmount
 		var signedReceivedAmount int64
