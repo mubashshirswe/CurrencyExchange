@@ -30,7 +30,7 @@ func (app *application) CreateExchangeHandler(w http.ResponseWriter, r *http.Req
 		SelledMoney:      payload.SelledMoney,
 		SelledCurrency:   payload.SelledCurrency,
 		UserId:           payload.UserId,
-		Details:          &payload.Details,
+		Details:          payload.Details,
 	}
 
 	if err := app.service.Exchanges.Create(r.Context(), exchange); err != nil {
@@ -79,7 +79,7 @@ func (app *application) UpdateExchangeHandler(w http.ResponseWriter, r *http.Req
 		SelledMoney:      payload.SelledMoney,
 		SelledCurrency:   payload.SelledCurrency,
 		UserId:           payload.UserId,
-		Details:          &payload.Details,
+		Details:          payload.Details,
 		CompanyID:        *payload.CompanyID,
 	}
 
