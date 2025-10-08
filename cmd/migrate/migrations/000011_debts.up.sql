@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS debts (
     id bigserial PRIMARY KEY,
-    received_amount bigint,
-    received_currency  varchar(255),
+    received_incomes jsonb DEFAULT '[]'::jsonb,
     debted_amount bigint,
     debted_currency  varchar(255),
     user_id bigint,
