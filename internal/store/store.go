@@ -46,9 +46,9 @@ type Storage struct {
 	Debts interface {
 		Create(context.Context, *Debts) error
 		Update(context.Context, *Debts) error
-		GetById(context.Context, int64) (*Debts, error)
-		GetByUserId(context.Context, int64, types.Pagination) ([]Debts, error)
-		GetByDebtorId(context.Context, int64, types.Pagination) ([]Debts, error)
+		GetByID(context.Context, int64) (*Debts, error)
+		GetByUserID(context.Context, int64, types.Pagination) ([]Debts, error)
+		GetByDebtorID(context.Context, int64, types.Pagination) ([]Debts, error)
 		Delete(context.Context, int64) error
 	}
 

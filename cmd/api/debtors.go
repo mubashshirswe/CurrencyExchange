@@ -6,19 +6,19 @@ import (
 	"net/http"
 
 	"github.com/mubashshir3767/currencyExchange/internal/store"
+	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
 type DebtorPayload struct {
-	FullName         string  `json:"full_name"`
-	ReceivedAmount   int64   `json:"received_amount"`
-	ReceivedCurrency string  `json:"received_currency"`
-	DebtedAmount     int64   `json:"debted_amount"`
-	DebtedCurrency   string  `json:"debted_currency"`
-	UserID           int64   `json:"user_id"`
-	Details          *string `json:"details"`
-	Phone            *string `json:"phone"`
-	IsBalanceEffect  int     `json:"is_balance_effect"`
-	Type             int     `json:"type"`
+	FullName        string                  `json:"full_name"`
+	ReceivedIncomes []types.ReceivedIncomes `json:"received_incomes"`
+	DebtedAmount    int64                   `json:"debted_amount"`
+	DebtedCurrency  string                  `json:"debted_currency"`
+	UserID          int64                   `json:"user_id"`
+	Details         *string                 `json:"details"`
+	Phone           *string                 `json:"phone"`
+	IsBalanceEffect int                     `json:"is_balance_effect"`
+	Type            int                     `json:"type"`
 }
 
 func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Request) {
@@ -29,16 +29,15 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	debtor := &store.Debts{
-		FullName:         payload.FullName,
-		ReceivedAmount:   payload.ReceivedAmount,
-		ReceivedCurrency: payload.ReceivedCurrency,
-		DebtedAmount:     payload.DebtedAmount,
-		DebtedCurrency:   payload.DebtedCurrency,
-		UserID:           payload.UserID,
-		Details:          payload.Details,
-		Phone:            payload.Phone,
-		IsBalanceEffect:  payload.IsBalanceEffect,
-		Type:             payload.Type,
+		FullName:        payload.FullName,
+		ReceivedIncomes: payload.ReceivedIncomes,
+		DebtedAmount:    payload.DebtedAmount,
+		DebtedCurrency:  payload.DebtedCurrency,
+		UserID:          payload.UserID,
+		Details:         payload.Details,
+		Phone:           payload.Phone,
+		IsBalanceEffect: payload.IsBalanceEffect,
+		Type:            payload.Type,
 	}
 
 	if err := app.service.Debts.Create(r.Context(), debtor); err != nil {
@@ -82,18 +81,17 @@ func (app *application) UpdateDebtsHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	debt := &store.Debts{
-		ID:               getIDFromContext(r),
-		FullName:         payload.FullName,
-		ReceivedAmount:   payload.ReceivedAmount,
-		ReceivedCurrency: payload.ReceivedCurrency,
-		DebtedAmount:     payload.DebtedAmount,
-		DebtedCurrency:   payload.DebtedCurrency,
-		UserID:           payload.UserID,
-		Details:          payload.Details,
-		Phone:            payload.Phone,
-		IsBalanceEffect:  payload.IsBalanceEffect,
-		Type:             payload.Type,
-		DebtorId:         payload.DebtorId,
+		ID:              getIDFromContext(r),
+		FullName:        payload.FullName,
+		ReceivedIncomes: payload.ReceivedIncomes,
+		DebtedAmount:    payload.DebtedAmount,
+		DebtedCurrency:  payload.DebtedCurrency,
+		UserID:          payload.UserID,
+		Details:         payload.Details,
+		Phone:           payload.Phone,
+		IsBalanceEffect: payload.IsBalanceEffect,
+		Type:            payload.Type,
+		DebtorID:        payload.DebtorID,
 	}
 
 	if err := app.service.Debts.Update(r.Context(), debt); err != nil {
@@ -123,7 +121,7 @@ func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *h
 
 func (app *application) GetDebtsByDebtorIdHandler(w http.ResponseWriter, r *http.Request) {
 	app.LoadPaginationInfo(r, r.Context())
-	debtors, err := app.store.Debts.GetByDebtorId(r.Context(), getIDFromContext(r), app.Pagination)
+	debtors, err := app.store.Debts.GetByDebtorID(r.Context(), getIDFromContext(r), app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
