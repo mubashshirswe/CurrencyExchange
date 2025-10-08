@@ -63,6 +63,11 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 			balance.OutInLay += tr.ReceivedAmount
 		}
 
+		debt.DebtorID = debtor.ID
+		if err := debtsStorage.Create(ctx, debt); err != nil {
+			return fmt.Errorf("ERROR OCCURRED WHILE debtsStorage.Create %v", err)
+		}
+
 		record := &store.BalanceRecord{
 			Amount:    tr.ReceivedAmount,
 			UserID:    debt.UserID,
@@ -81,11 +86,6 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 		if err := balancesStorage.Update(ctx, balance); err != nil {
 			return fmt.Errorf("ERROR OCCURRED WHILE balancesStorage.Update %v", err)
 		}
-	}
-
-	debt.DebtorID = debtor.ID
-	if err := debtsStorage.Create(ctx, debt); err != nil {
-		return fmt.Errorf("ERROR OCCURRED WHILE debtsStorage.Create %v", err)
 	}
 
 	if err := tx.Commit(); err != nil {
