@@ -37,3 +37,8 @@ type Pagination struct {
 	UserId              int64       `json:"user_id"`
 	Language            *string     `json:"language"`
 }
+
+const (
+	TYPE_SELL = 1
+	TYPE_BUY  = 2
+)
