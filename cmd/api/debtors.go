@@ -15,8 +15,8 @@ type DebtorPayload struct {
 	DebtedAmount    int64                   `json:"debted_amount"`
 	DebtedCurrency  string                  `json:"debted_currency"`
 	UserID          int64                   `json:"user_id"`
-	Details         *string                 `json:"details"`
-	Phone           *string                 `json:"phone"`
+	Details         string                  `json:"details"`
+	Phone           string                  `json:"phone"`
 	IsBalanceEffect int                     `json:"is_balance_effect"`
 	Type            int                     `json:"type"`
 }

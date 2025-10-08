@@ -14,7 +14,7 @@ type Debtors struct {
 	Currency           string    `json:"currency"`
 	UserID             int64     `json:"user_id"`
 	CompanyID          int64     `json:"company_id"`
-	Phone              *string   `json:"phone"`
+	Phone              string    `json:"phone"`
 	FullName           string    `json:"full_name"`
 	CreatedAt          time.Time `json:"-"`
 	CreatedAtFormatted string    `json:"created_at"`

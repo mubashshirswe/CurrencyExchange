@@ -7,8 +7,8 @@ CREATE TABLE IF NOT EXISTS transactions (
     delivered_outcomes jsonb DEFAULT '[]'::jsonb,
     delivered_company_id bigint NULL,
     delivered_user_id bigint NULL,
-    phone varchar(255) DEFAULT NULL,
-    details varchar(255) DEFAULT NULL,
+    phone varchar(255),
+    details varchar(255),
     status bigint,
     type bigint,
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()

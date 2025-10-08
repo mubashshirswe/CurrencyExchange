@@ -222,7 +222,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				CompanyID:     balance.CompanyId,
 				TransactionId: &transaction.ID,
 				BalanceID:     balance.ID,
-				Details:       &transaction.Details,
+				Details:       transaction.Details,
 				Type:          transaction.Type,
 			}
 
@@ -265,7 +265,7 @@ func (s *TransactionService) Update(ctx context.Context, transaction *store.Tran
 				CompanyID:     balance.CompanyId,
 				TransactionId: &transaction.ID,
 				BalanceID:     balance.ID,
-				Details:       &transaction.Details,
+				Details:       transaction.Details,
 				Type:          transaction.Type,
 			}
 

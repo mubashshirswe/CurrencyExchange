@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS debtors (
     currency  varchar(255),
     user_id bigint,
     company_id bigint,
-    phone varchar(255) DEFAULT NULL,
+    phone varchar(255),
     full_name varchar(255),
     created_at timestamp(0) with time zone NOT NULL DEFAULT now()
 );

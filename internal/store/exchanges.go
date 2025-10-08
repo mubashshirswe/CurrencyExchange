@@ -15,7 +15,7 @@ type Exchange struct {
 	SelledMoney        int64     `json:"selled_money"`
 	SelledCurrency     string    `json:"selled_currency"`
 	UserId             int64     `json:"user_id"`
-	Details            *string   `json:"details"`
+	Details            string    `json:"details"`
 	CompanyID          int64     `json:"company_id"`
 	Status             int64     `json:"status"`
 	CreatedAt          time.Time `json:"-"`

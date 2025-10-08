@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS balance_records (
     exchange_id bigint default null REFERENCES exchanges(id),
     transaction_id bigint default null REFERENCES transactions(id),
     debt_id bigint default null REFERENCES debts(id),
-    details varchar(255) DEFAULT NULL,
+    details varchar(255),
     currency varchar(255),
     type bigint,
     status bigint,

@@ -60,7 +60,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 			Currency:  balanceRecord.SelledCurrency,
 			CompanyID: user.CompanyId,
 			BalanceID: selledCurrencyBalance.ID,
-			Details:   &balanceRecord.Details,
+			Details:   balanceRecord.Details,
 			UserID:    balanceRecord.UserId,
 			Type:      TYPE_SELL,
 		}
@@ -94,7 +94,7 @@ func (s *BalanceRecordService) PerformBalanceRecord(ctx context.Context, balance
 			Currency:  balanceRecord.ReceivedCurrency,
 			CompanyID: user.CompanyId,
 			BalanceID: receivedCurrencyBalance.ID,
-			Details:   &balanceRecord.Details,
+			Details:   balanceRecord.Details,
 			UserID:    balanceRecord.UserId,
 			Type:      TYPE_BUY,
 		}

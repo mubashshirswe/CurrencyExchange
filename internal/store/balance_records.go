@@ -19,7 +19,7 @@ type BalanceRecord struct {
 	TransactionId      *int64    `json:"transaction_id"`
 	DebtId             *int64    `json:"debt_id"`
 	ExchangeId         *int64    `json:"exchange_id"`
-	Details            *string   `json:"details"`
+	Details            string    `json:"details"`
 	Currency           string    `json:"currency"`
 	Type               int64     `json:"type"`
 	Status             int64     `json:"status"`

@@ -19,9 +19,9 @@ type Debts struct {
 	State              int64                   `json:"state"`
 	UserID             int64                   `json:"user_id"`
 	CompanyID          int64                   `json:"company_id"`
-	DebtorID           int64                   `json:"debtor_id"` // Fixed: consistent naming
-	Details            *string                 `json:"details"`
-	Phone              *string                 `json:"phone"`
+	DebtorID           int64                   `json:"debtor_id"`
+	Details            string                  `json:"details"`
+	Phone              string                  `json:"phone"`
 	IsBalanceEffect    int                     `json:"is_balance_effect"`
 	Type               int                     `json:"type"`
 	CreatedAt          time.Time               `json:"-"`
