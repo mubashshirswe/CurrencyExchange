@@ -64,6 +64,7 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 		}
 
 		debt.DebtorID = debtor.ID
+		debt.CompanyID = user.CompanyId
 		if err := debtsStorage.Create(ctx, debt); err != nil {
 			return fmt.Errorf("ERROR OCCURRED WHILE debtsStorage.Create %v", err)
 		}
