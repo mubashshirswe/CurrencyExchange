@@ -119,9 +119,9 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 
 	// Update debtor balance: positive if debtor owes user
 	if debt.Type == types.TYPE_SELL {
-		debtor.Balance += originalPositiveDebted
-	} else {
 		debtor.Balance -= originalPositiveDebted
+	} else {
+		debtor.Balance += originalPositiveDebted
 	}
 
 	if err := debtorsStorage.Update(ctx, debtor); err != nil {
