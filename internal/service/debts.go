@@ -25,12 +25,14 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 	debtorsStorage := store.NewDebtorsStorage(tx)
 	debtsStorage := store.NewDebtsStorage(tx)
 
+	user, _ := s.store.Users.GetById(ctx, &debt.UserID)
+
 	debtor := &store.Debtors{
 		FullName:  debt.FullName,
 		Balance:   debt.DebtedAmount,
 		Currency:  debt.DebtedCurrency,
 		UserID:    debt.UserID,
-		CompanyID: debt.CompanyID,
+		CompanyID: user.CompanyId,
 		Phone:     debt.Phone,
 	}
 
@@ -43,7 +45,6 @@ func (s *DebtsService) Create(ctx context.Context, debt *store.Debts) error {
 		if err != nil {
 			return fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByUserIdAndCurrency")
 		}
-		debt.CompanyID = balance.CompanyId
 
 		switch debt.Type {
 		case TYPE_SELL:
