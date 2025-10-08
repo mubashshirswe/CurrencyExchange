@@ -28,6 +28,10 @@ func (app *application) CreateDebtorsHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	jsonPayload, _ := json.Marshal(payload)
+	log.Println("PAYLOAD")
+	log.Println(string(jsonPayload))
+
 	debtor := &store.Debts{
 		FullName:        payload.FullName,
 		ReceivedIncomes: payload.ReceivedIncomes,
