@@ -227,9 +227,9 @@ func (s *DebtsService) Transaction(ctx context.Context, debt *store.Debts) error
 
 	// Update debtor balance
 	if debt.Type == types.TYPE_SELL {
-		debtor.Balance += originalPositiveDebted
-	} else {
 		debtor.Balance -= originalPositiveDebted
+	} else {
+		debtor.Balance += originalPositiveDebted
 	}
 
 	if err := debtorsStorage.Update(ctx, debtor); err != nil {
@@ -288,9 +288,9 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 	// Reverse debtor effect
 	originalOldPositive := math.Abs(float64(oldDebt.DebtedAmount))
 	if oldDebt.Type == types.TYPE_SELL {
-		debtor.Balance -= int64(originalOldPositive) // Undo + positive
+		debtor.Balance += int64(originalOldPositive) // Undo + positive
 	} else {
-		debtor.Balance += int64(originalOldPositive) // Undo - positive
+		debtor.Balance -= int64(originalOldPositive) // Undo - positive
 	}
 
 	// Delete old records
@@ -354,9 +354,9 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 
 	// Apply new debtor effect
 	if debt.Type == types.TYPE_SELL {
-		debtor.Balance += originalPositiveDebted
-	} else {
 		debtor.Balance -= originalPositiveDebted
+	} else {
+		debtor.Balance += originalPositiveDebted
 	}
 
 	if err := debtsStorage.Update(ctx, debt); err != nil {
@@ -421,9 +421,9 @@ func (s *DebtsService) Delete(ctx context.Context, debtId int64) error {
 	// Reverse debtor effect
 	originalPositive := math.Abs(float64(debt.DebtedAmount))
 	if debt.Type == types.TYPE_SELL {
-		debtor.Balance -= int64(originalPositive) // Undo + positive
+		debtor.Balance += int64(originalPositive) // Undo + positive
 	} else {
-		debtor.Balance += int64(originalPositive) // Undo - positive
+		debtor.Balance -= int64(originalPositive) // Undo - positive
 	}
 
 	if err := balancesStorage.Update(ctx, balance); err != nil {
