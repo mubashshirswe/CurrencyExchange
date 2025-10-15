@@ -121,7 +121,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 			details = $9,
 			status = $10,
 			type = $11
-		WHERE id = $11 AND status = $13
+		WHERE id = $12 AND status = $13
 	`
 
 	result, err := s.db.ExecContext(
