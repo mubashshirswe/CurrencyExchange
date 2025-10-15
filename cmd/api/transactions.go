@@ -81,7 +81,7 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 		return
 	}
 
-	if err := app.writeResponse(w, http.StatusOK, ""); err != nil {
+	if err := app.writeResponse(w, http.StatusOK, transaction); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
