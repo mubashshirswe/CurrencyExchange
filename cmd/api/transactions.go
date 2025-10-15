@@ -10,7 +10,7 @@ import (
 )
 
 type TransactionPayload struct {
-	ServiceFee         string                    `json:"service_fee"`
+	ServiceFee         any                       `json:"service_fee"`
 	ReceivedIncomes    []types.ReceivedIncomes   `json:"received_incomes"`
 	DeliveredOutcomes  []types.DeliveredOutcomes `json:"delivered_outcomes"`
 	ReceivedCompanyId  int64                     `json:"received_company_id"`
@@ -30,7 +30,7 @@ func (app *application) CreateTransactionHandler(w http.ResponseWriter, r *http.
 	}
 
 	transaction := &store.Transaction{
-		ServiceFee:         payload.ServiceFee,
+		ServiceFee:         fmt.Sprint(payload.ServiceFee),
 		ReceivedIncomes:    payload.ReceivedIncomes,
 		DeliveredOutcomes:  payload.DeliveredOutcomes,
 		ReceivedCompanyId:  payload.ReceivedCompanyId,
@@ -63,7 +63,7 @@ func (app *application) UpdateTransactionHandler(w http.ResponseWriter, r *http.
 
 	transaction := &store.Transaction{
 		ID:                 getIDFromContext(r),
-		ServiceFee:         payload.ServiceFee,
+		ServiceFee:         fmt.Sprint(payload.ServiceFee),
 		ReceivedIncomes:    payload.ReceivedIncomes,
 		DeliveredOutcomes:  payload.DeliveredOutcomes,
 		ReceivedCompanyId:  payload.ReceivedCompanyId,
