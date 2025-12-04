@@ -42,9 +42,11 @@ func NewDebtorsStorage(db DBTX) *DebtorsStorage {
 
 func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	query := `
-				INSERT INTO debtors (balance, currency, user_id, phone, company_id, full_name)
-				VALUES($1, $2, $3, $4, $5, $6) RETURNING id, created_at
+				INSERT INTO debtors (balance, currency, user_id, phone, company_id, full_name, created_at)
+				VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id, created_at
 			`
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	nowUz := time.Now().In(loc)
 
 	err := s.db.QueryRowContext(
 		ctx,
@@ -55,6 +57,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 		credits.Phone,
 		credits.CompanyID,
 		credits.FullName,
+		nowUz,
 	).Scan(
 		&credits.ID,
 		&credits.CreatedAt,
