@@ -66,11 +66,14 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		return err
 	}
 
+	loc, _ := time.LoadLocation("Asia/Tashkent")
+	nowUz := time.Now().In(loc)
+
 	query := `
 			INSERT INTO transactions(
 				service_fee, received_incomes, delivered_outcomes,
-	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, created_at`
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, created_at`
 
 	err = s.db.QueryRowContext(
 		ctx,
@@ -86,6 +89,7 @@ func (s *TransactionStorage) Create(ctx context.Context, tr *Transaction) error 
 		tr.Details,
 		STATUS_CREATED,
 		tr.Type,
+		nowUz,
 	).Scan(
 		&tr.ID,
 		&tr.CreatedAt,
