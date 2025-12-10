@@ -111,7 +111,9 @@ func (app *application) UpdateDebtsHandler(w http.ResponseWriter, r *http.Reques
 
 func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
 	app.LoadPaginationInfo(r, r.Context())
-	debtors, err := app.service.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r), app.Pagination)
+	search := r.URL.Query().Get("search")
+
+	debtors, err := app.service.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r), search, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

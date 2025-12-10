@@ -70,23 +70,53 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	return nil
 }
 
-func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64, pagination types.Pagination) ([]Debtors, error) {
+func (s *DebtorsStorage) GetByCompanyId(
+	ctx context.Context,
+	companyId int64,
+	search string,
+	pagination types.Pagination,
+) ([]Debtors, error) {
+
 	query := `
-				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-				FROM debtors WHERE company_id = $1 	ORDER BY balance DESC
-	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
+		SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
+		FROM debtors
+		WHERE company_id = $1
+	`
 
-	var credits []Debtors
-	rows, err := s.db.QueryContext(
-		ctx,
-		query,
-		companyId,
-	)
+	args := []interface{}{companyId}
+	argIndex := 2
 
+	// Add search if provided
+	if search != "" {
+		searchLike := "%" + search + "%"
+		query += fmt.Sprintf(`
+			AND (
+				CAST(id AS TEXT) ILIKE $%d OR
+				CAST(balance AS TEXT) ILIKE $%d OR
+				currency ILIKE $%d OR
+				phone ILIKE $%d OR
+				full_name ILIKE $%d OR
+				CAST(user_id AS TEXT) ILIKE $%d
+			)
+		`, argIndex, argIndex, argIndex, argIndex, argIndex, argIndex)
+
+		args = append(args, searchLike)
+		argIndex++
+	}
+
+	// Add order, offset, limit
+	query += fmt.Sprintf(`
+		ORDER BY balance DESC
+		OFFSET %d LIMIT %d
+	`, pagination.Offset, pagination.Limit)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
+
+	var credits []Debtors
 
 	for rows.Next() {
 		var credit Debtors
@@ -100,17 +130,14 @@ func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64, pa
 			&credit.CreatedAt,
 			&credit.FullName,
 		)
-
 		if err != nil {
 			return nil, err
 		}
 
 		loc, _ := time.LoadLocation("Asia/Tashkent")
-		createdAtInTashkent := credit.CreatedAt.In(loc)
-		credit.CreatedAtFormatted = createdAtInTashkent.Format("2006-01-02 15:04:05")
+		credit.CreatedAtFormatted = credit.CreatedAt.In(loc).Format("2006-01-02 15:04:05")
 
 		credits = append(credits, credit)
-
 	}
 
 	return credits, nil
