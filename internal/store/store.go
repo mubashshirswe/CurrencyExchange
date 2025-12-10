@@ -39,7 +39,7 @@ type Storage struct {
 		Update(context.Context, *Debtors) error
 		GetById(context.Context, int64) (*Debtors, error)
 		GetByUserId(context.Context, int64, types.Pagination) ([]Debtors, error)
-		GetByCompanyId(context.Context, int64, string, types.Pagination) ([]Debtors, error)
+		GetByCompanyId(context.Context, int64, *string, types.Pagination) ([]Debtors, error)
 		GetByBalanceInfo(context.Context, int64) ([]map[string]interface{}, error)
 		Delete(context.Context, int64) error
 	}

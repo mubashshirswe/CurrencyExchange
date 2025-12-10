@@ -29,7 +29,7 @@ type Service struct {
 	}
 
 	Debtors interface {
-		GetByCompanyId(context.Context, int64, string, types.Pagination) ([]map[string]interface{}, error)
+		GetByCompanyId(context.Context, int64, *string, types.Pagination) ([]map[string]interface{}, error)
 	}
 
 	BalanceRecords interface {

@@ -73,7 +73,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 func (s *DebtorsStorage) GetByCompanyId(
 	ctx context.Context,
 	companyId int64,
-	search string,
+	search *string,
 	pagination types.Pagination,
 ) ([]Debtors, error) {
 
@@ -87,18 +87,16 @@ func (s *DebtorsStorage) GetByCompanyId(
 	argIndex := 2
 
 	// Add search if provided
-	if search != "" {
-		searchLike := "%" + search + "%"
+	if search != nil {
+		searchLike := "%" + *search + "%"
 		query += fmt.Sprintf(`
 			AND (
-				CAST(id AS TEXT) ILIKE $%d OR
 				CAST(balance AS TEXT) ILIKE $%d OR
 				currency ILIKE $%d OR
 				phone ILIKE $%d OR
-				full_name ILIKE $%d OR
-				CAST(user_id AS TEXT) ILIKE $%d
+				full_name ILIKE $%d
 			)
-		`, argIndex, argIndex, argIndex, argIndex, argIndex, argIndex)
+		`, argIndex, argIndex, argIndex, argIndex)
 
 		args = append(args, searchLike)
 		argIndex++
