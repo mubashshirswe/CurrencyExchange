@@ -73,7 +73,7 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64, pagination types.Pagination) ([]Debtors, error) {
 	query := `
 				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-				FROM debtors WHERE company_id = $1 	ORDER BY created_at DESC
+				FROM debtors WHERE company_id = $1 	ORDER BY balance DESC
 	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	var credits []Debtors
@@ -116,10 +116,55 @@ func (s *DebtorsStorage) GetByCompanyId(ctx context.Context, companyId int64, pa
 	return credits, nil
 }
 
+func (s *DebtorsStorage) GetByBalanceInfo(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
+	query :=
+		`
+		SELECT
+   			 currency,
+   			 SUM(CASE WHEN balance > 0 THEN balance ELSE 0 END) AS positive_balance,
+   			 SUM(CASE WHEN balance < 0 THEN balance ELSE 0 END) AS negative_balance
+		FROM debtors WHERE company_id = $1 GROUP BY currency
+	`
+
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		companyId,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []map[string]interface{}
+
+	for rows.Next() {
+		var currency string
+		var positiveBalance int64
+		var negativeBalance int64
+
+		err := rows.Scan(&currency, &positiveBalance, &negativeBalance)
+
+		if err != nil {
+			return nil, err
+		}
+
+		info := map[string]interface{}{
+			"currency":         currency,
+			"positive_balance": positiveBalance,
+			"negative_balance": negativeBalance,
+		}
+
+		result = append(result, info)
+	}
+	return result, nil
+}
+
 func (s *DebtorsStorage) GetByUserId(ctx context.Context, userId int64, pagination types.Pagination) ([]Debtors, error) {
 	query := `
 				SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-				FROM debtors WHERE user_id = $1 	ORDER BY created_at DESC
+				FROM debtors WHERE user_id = $1 ORDER BY balance DESC
 	` + fmt.Sprintf(" OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
 	var credits []Debtors

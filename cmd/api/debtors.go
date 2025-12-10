@@ -123,6 +123,19 @@ func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *h
 	}
 }
 
+func (app *application) GetDebtorsTotalBalanceInfo(w http.ResponseWriter, r *http.Request) {
+	infos, err := app.store.Debtors.GetByBalanceInfo(r.Context(), getIDFromContext(r))
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.writeResponse(w, http.StatusOK, infos); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
 func (app *application) GetDebtsByDebtorIdHandler(w http.ResponseWriter, r *http.Request) {
 	app.LoadPaginationInfo(r, r.Context())
 	debtors, err := app.store.Debts.GetByDebtorID(r.Context(), getIDFromContext(r), app.Pagination)

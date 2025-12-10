@@ -107,6 +107,7 @@ func (app *application) mount() *chi.Mux {
 				r.Post("/create", app.CreateDebtorsHandler)
 				r.Post("/transaction", app.CreateDebtorTransactionHandler)
 				r.Get("/company/{id}", app.GetDebtorsByCompanyIdHandler)
+				r.Get("/info/{id}", app.GetDebtorsTotalBalanceInfo)
 				r.Delete("/{id}", app.DeleteDebtorsHandler)
 
 				r.Route("/debts/{id}", func(r chi.Router) {
