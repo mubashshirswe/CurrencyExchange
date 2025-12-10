@@ -182,7 +182,7 @@ func (app *application) LoadPaginationInfo(r *http.Request, ctx context.Context)
 	if orderBy != "" {
 		app.Pagination.OrderBy = orderBy
 	} else {
-		app.Pagination.OrderBy = "balance"
+		app.Pagination.OrderBy = "balance DESC"
 	}
 
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))

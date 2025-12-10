@@ -104,7 +104,7 @@ func (s *DebtorsStorage) GetByCompanyId(
 
 	// Add order, offset, limit
 	query += fmt.Sprintf(`
-		ORDER BY `+pagination.OrderBy+` DESC
+		ORDER BY `+pagination.OrderBy+` 
 		OFFSET %d LIMIT %d
 	`, pagination.Offset, pagination.Limit)
 
