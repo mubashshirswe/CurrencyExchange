@@ -30,6 +30,7 @@ type DeliveredOutcomes struct {
 type Pagination struct {
 	Page                int         `json:"page"`
 	Limit               int         `json:"limit"`
+	OrderBy             string      `json:"order_by"`
 	Data                interface{} `json:"data"`
 	Offset              int         `json:"offset"`
 	TaskId              int         `json:"taskId"`

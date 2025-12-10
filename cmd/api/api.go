@@ -178,6 +178,13 @@ func (app *application) LoadPaginationInfo(r *http.Request, ctx context.Context)
 	}
 	app.Pagination.Page = page
 
+	orderBy := r.URL.Query().Get("order_by")
+	if orderBy != "" {
+		app.Pagination.OrderBy = orderBy
+	} else {
+		app.Pagination.OrderBy = "balance"
+	}
+
 	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
 	if err != nil || limit < 1 {
 		limit = 10
