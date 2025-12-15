@@ -293,6 +293,8 @@ func (s *DebtsService) Update(ctx context.Context, debt *store.Debts) error {
 		debtor.Balance -= int64(originalOldPositive) // Undo - positive
 	}
 
+	debtor.Currency = debt.DebtedCurrency
+
 	// Delete old records
 	if err := balanceRecordsStorage.DeleteByDebtId(ctx, oldDebt.ID); err != nil {
 		return fmt.Errorf("failed to delete old balance records: %w", err)
