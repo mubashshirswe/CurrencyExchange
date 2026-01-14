@@ -13,6 +13,7 @@ import (
 type Debts struct {
 	ID                 int64                   `json:"id"`
 	FullName           string                  `json:"full_name"`
+	Username           *string                 `json:"username"`
 	ReceivedIncomes    []types.ReceivedIncomes `json:"received_incomes"`
 	DebtedAmount       int64                   `json:"debted_amount"`
 	DebtedCurrency     string                  `json:"debted_currency"`
@@ -93,9 +94,15 @@ func (s *DebtsStorage) GetByCompanyID(ctx context.Context, companyID int64) ([]D
 
 func (s *DebtsStorage) GetByDebtorID(ctx context.Context, debtorID int64, pagination types.Pagination) ([]Debts, error) {
 	query := `
-		SELECT id, received_incomes, debted_amount, debted_currency, user_id, 
-		details, phone, is_balance_effect, type, created_at, company_id, debtor_id, state
-		FROM debts WHERE debtor_id = $1 ORDER BY created_at DESC
+		SELECT 
+			u.username,
+			d.id, d.received_incomes, d.debted_amount, d.debted_currency,
+			d.user_id, d.details, d.phone, d.is_balance_effect,
+			d.type, d.created_at, d.company_id, d.debtor_id, d.state
+		FROM debts d
+		LEFT JOIN users u ON d.user_id = u.id
+		WHERE d.debtor_id = $1
+		ORDER BY d.created_at DESC
 		LIMIT $2 OFFSET $3
 	`
 
@@ -105,7 +112,7 @@ func (s *DebtsStorage) GetByDebtorID(ctx context.Context, debtorID int64, pagina
 	}
 	defer rows.Close()
 
-	return s.scanDebts(rows)
+	return s.scanDebtsWithUsername(rows)
 }
 
 func (s *DebtsStorage) GetByUserID(ctx context.Context, userID int64, pagination types.Pagination) ([]Debts, error) {
@@ -290,4 +297,42 @@ func (s *DebtsStorage) formatTime(t time.Time) string {
 		return t.Format("2006-01-02 15:04:05")
 	}
 	return t.In(loc).Format("2006-01-02 15:04:05")
+}
+
+func (s *DebtsStorage) scanDebtsWithUsername(rows *sql.Rows) ([]Debts, error) {
+	var debts []Debts
+
+	for rows.Next() {
+		var debt Debts
+		var incomesJSON []byte
+
+		err := rows.Scan(
+			&debt.Username,
+			&debt.ID,
+			&incomesJSON,
+			&debt.DebtedAmount,
+			&debt.DebtedCurrency,
+			&debt.UserID,
+			&debt.Details,
+			&debt.Phone,
+			&debt.IsBalanceEffect,
+			&debt.Type,
+			&debt.CreatedAt,
+			&debt.CompanyID,
+			&debt.DebtorID,
+			&debt.State,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(incomesJSON) > 0 {
+			_ = json.Unmarshal(incomesJSON, &debt.ReceivedIncomes)
+		}
+
+		debt.CreatedAtFormatted = s.formatTime(debt.CreatedAt)
+		debts = append(debts, debt)
+	}
+
+	return debts, rows.Err()
 }
