@@ -145,18 +145,31 @@ func (s *DebtorsStorage) GetByCompanyId(
 	// index-friendly range filter ishlatyapmiz
 	if dateFilter != nil && *dateFilter != "" {
 
-		parsedDate, err := time.Parse("2006-01-02", *dateFilter)
+		loc, err := time.LoadLocation("Asia/Tashkent")
 		if err != nil {
-			return nil, fmt.Errorf("invalid date format (expected YYYY-MM-DD): %w", err)
+			return nil, fmt.Errorf("timezone load error: %w", err)
 		}
 
-		startOfDay := parsedDate
-		endOfDay := parsedDate.Add(24 * time.Hour)
+		// Parse as Tashkent time
+		localDate, err := time.ParseInLocation("2006-01-02", *dateFilter, loc)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date format (YYYY-MM-DD): %w", err)
+		}
+
+		startOfDay := time.Date(
+			localDate.Year(),
+			localDate.Month(),
+			localDate.Day(),
+			0, 0, 0, 0,
+			loc,
+		)
+
+		endOfDay := startOfDay.Add(24 * time.Hour)
 
 		query += fmt.Sprintf(`
-            AND d.created_at >= $%d
-            AND d.created_at < $%d
-        `, argIndex, argIndex+1)
+        AND d.created_at >= $%d
+        AND d.created_at < $%d
+    `, argIndex, argIndex+1)
 
 		args = append(args, startOfDay, endOfDay)
 		argIndex += 2
