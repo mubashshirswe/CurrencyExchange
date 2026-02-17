@@ -70,6 +70,29 @@ func (s *DebtorsStorage) Create(ctx context.Context, credits *Debtors) error {
 	return nil
 }
 
+// allowedOrderBy whitelists safe ORDER BY values to prevent SQL injection.
+var allowedOrderBy = map[string]string{
+	"id ASC":            "d.id ASC",
+	"id DESC":           "d.id DESC",
+	"d.id ASC":          "d.id ASC",
+	"d.id DESC":         "d.id DESC",
+	"created_at ASC":    "d.created_at ASC",
+	"created_at DESC":   "d.created_at DESC",
+	"d.created_at ASC":  "d.created_at ASC",
+	"d.created_at DESC": "d.created_at DESC",
+	"full_name ASC":     "d.full_name ASC",
+	"full_name DESC":    "d.full_name DESC",
+	"balance ASC":       "d.balance ASC",
+	"balance DESC":      "d.balance DESC",
+}
+
+func sanitizeOrderBy(raw string) string {
+	if safe, ok := allowedOrderBy[raw]; ok {
+		return safe
+	}
+	return "d.created_at DESC" // safe default
+}
+
 func (s *DebtorsStorage) GetByCompanyId(
 	ctx context.Context,
 	companyId int64,
@@ -102,18 +125,19 @@ func (s *DebtorsStorage) GetByCompanyId(
 		argIndex++
 	}
 
-	// Date filter on debt creation date
+	// Date filter — convert stored UTC timestamp to Tashkent time before comparing,
+	// so records at e.g. 00:30 Tashkent (= prev day UTC) are counted correctly.
 	if dateFilter != nil && *dateFilter != "" {
-		query += fmt.Sprintf(" AND d.created_at::date = $%d", argIndex)
+		query += fmt.Sprintf(
+			" AND (d.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Tashkent')::date = $%d",
+			argIndex,
+		)
 		args = append(args, *dateFilter)
 		argIndex++
 	}
 
-	// Order & pagination
-	orderBy := pagination.OrderBy
-	if orderBy == "" {
-		orderBy = "d.created_at DESC" // or "MAX(db.created_at) DESC" if you want latest debt
-	}
+	// Sanitize ORDER BY to prevent SQL injection
+	orderBy := sanitizeOrderBy(pagination.OrderBy)
 
 	query += fmt.Sprintf(`
         ORDER BY %s
@@ -128,11 +152,16 @@ func (s *DebtorsStorage) GetByCompanyId(
 	}
 	defer rows.Close()
 
+	loc, err := time.LoadLocation("Asia/Tashkent")
+	if err != nil {
+		loc = time.UTC // fallback if tz data missing
+	}
+
 	var debtors []Debtors
 
 	for rows.Next() {
 		var d Debtors
-		err := rows.Scan(
+		if err := rows.Scan(
 			&d.ID,
 			&d.Balance,
 			&d.Currency,
@@ -141,14 +170,11 @@ func (s *DebtorsStorage) GetByCompanyId(
 			&d.CompanyID,
 			&d.CreatedAt,
 			&d.FullName,
-		)
-		if err != nil {
+		); err != nil {
 			return nil, fmt.Errorf("scan failed: %w", err)
 		}
 
-		loc, _ := time.LoadLocation("Asia/Tashkent")
 		d.CreatedAtFormatted = d.CreatedAt.In(loc).Format("2006-01-02 15:04:05")
-
 		debtors = append(debtors, d)
 	}
 
