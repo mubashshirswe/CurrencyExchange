@@ -102,7 +102,15 @@ func (s *DebtorsStorage) GetByCompanyId(
 ) ([]Debtors, error) {
 
 	query := `
-        SELECT DISTINCT d.id, d.balance, d.currency, d.user_id, d.phone, d.company_id, d.created_at, d.full_name
+        SELECT DISTINCT
+            d.id,
+            d.balance,
+            d.currency,
+            d.user_id,
+            d.phone,
+            d.company_id,
+            d.created_at,
+            d.full_name
         FROM debtors d
         WHERE d.company_id = $1
     `
@@ -110,7 +118,9 @@ func (s *DebtorsStorage) GetByCompanyId(
 	args := []interface{}{companyId}
 	argIndex := 2
 
-	// Search filter
+	// ------------------------
+	// SEARCH FILTER
+	// ------------------------
 	if search != nil && *search != "" {
 		searchLike := "%" + *search + "%"
 		query += fmt.Sprintf(`
@@ -121,22 +131,40 @@ func (s *DebtorsStorage) GetByCompanyId(
                 d.full_name ILIKE $%d
             )
         `, argIndex, argIndex, argIndex, argIndex)
+
 		args = append(args, searchLike)
 		argIndex++
 	}
 
-	// Date filter — convert stored UTC timestamp to Tashkent time before comparing,
-	// so records at e.g. 00:30 Tashkent (= prev day UTC) are counted correctly.
+	// ------------------------
+	// DATE FILTER (FIXED)
+	// ------------------------
+	// created_at Tashkent time da saqlangan
+	// request ham Tashkent time
+	// timezone conversion kerak emas
+	// index-friendly range filter ishlatyapmiz
 	if dateFilter != nil && *dateFilter != "" {
-		query += fmt.Sprintf(
-			" AND (d.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Tashkent')::date = $%d",
-			argIndex,
-		)
-		args = append(args, *dateFilter)
-		argIndex++
+
+		parsedDate, err := time.Parse("2006-01-02", *dateFilter)
+		if err != nil {
+			return nil, fmt.Errorf("invalid date format (expected YYYY-MM-DD): %w", err)
+		}
+
+		startOfDay := parsedDate
+		endOfDay := parsedDate.Add(24 * time.Hour)
+
+		query += fmt.Sprintf(`
+            AND d.created_at >= $%d
+            AND d.created_at < $%d
+        `, argIndex, argIndex+1)
+
+		args = append(args, startOfDay, endOfDay)
+		argIndex += 2
 	}
 
-	// Sanitize ORDER BY to prevent SQL injection
+	// ------------------------
+	// ORDER BY + PAGINATION
+	// ------------------------
 	orderBy := sanitizeOrderBy(pagination.OrderBy)
 
 	query += fmt.Sprintf(`
@@ -154,13 +182,14 @@ func (s *DebtorsStorage) GetByCompanyId(
 
 	loc, err := time.LoadLocation("Asia/Tashkent")
 	if err != nil {
-		loc = time.UTC // fallback if tz data missing
+		loc = time.UTC
 	}
 
 	var debtors []Debtors
 
 	for rows.Next() {
 		var d Debtors
+
 		if err := rows.Scan(
 			&d.ID,
 			&d.Balance,
@@ -174,7 +203,9 @@ func (s *DebtorsStorage) GetByCompanyId(
 			return nil, fmt.Errorf("scan failed: %w", err)
 		}
 
+		// Format in Tashkent time
 		d.CreatedAtFormatted = d.CreatedAt.In(loc).Format("2006-01-02 15:04:05")
+
 		debtors = append(debtors, d)
 	}
 
