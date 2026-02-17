@@ -74,50 +74,50 @@ func (s *DebtorsStorage) GetByCompanyId(
 	ctx context.Context,
 	companyId int64,
 	search *string,
-	dateFilter *string, // YYYY-MM-DD formatida, masalan "2025-02-18"
+	dateFilter *string, // "2025-02-18" or nil/empty = all
 	pagination types.Pagination,
 ) ([]Debtors, error) {
 
 	query := `
-        SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-        FROM debtors
-        WHERE company_id = $1
+        SELECT DISTINCT d.id, d.balance, d.currency, d.user_id, d.phone, d.company_id, d.created_at, d.full_name
+        FROM debtors d
+        JOIN debts db ON d.id = db.debtor_id
+        WHERE d.company_id = $1
     `
 
 	args := []interface{}{companyId}
 	argIndex := 2
 
-	// 1. Search filtri (sizda bor edi, o'zgartirmaymiz)
+	// Search filter
 	if search != nil && *search != "" {
 		searchLike := "%" + *search + "%"
 		query += fmt.Sprintf(`
             AND (
-                CAST(balance AS TEXT) ILIKE $%d OR
-                currency ILIKE $%d OR
-                phone ILIKE $%d OR
-                full_name ILIKE $%d
+                CAST(d.balance AS TEXT) ILIKE $%d OR
+                d.currency ILIKE $%d OR
+                d.phone ILIKE $%d OR
+                d.full_name ILIKE $%d
             )
         `, argIndex, argIndex, argIndex, argIndex)
 		args = append(args, searchLike)
 		argIndex++
 	}
 
-	// 2. created_at bo‘yicha filtr (faqat bitta kun)
+	// Date filter on debt creation date
 	if dateFilter != nil && *dateFilter != "" {
-		// PostgreSQLda ::date operator yordamida faqat sana qismini solishtiramiz
-		query += fmt.Sprintf(" AND created_at::date = $%d", argIndex)
-		args = append(args, *dateFilter) // "2025-02-18"
+		query += fmt.Sprintf(" AND db.created_at::date = $%d", argIndex)
+		args = append(args, *dateFilter)
 		argIndex++
 	}
 
-	// 3. Order by + pagination
+	// Order & pagination
 	orderBy := pagination.OrderBy
 	if orderBy == "" {
-		orderBy = "created_at DESC" // default: eng yangi created birinchi
+		orderBy = "d.created_at DESC" // or "MAX(db.created_at) DESC" if you want latest debt
 	}
 
 	query += fmt.Sprintf(`
-        ORDER BY %s 
+        ORDER BY %s
         OFFSET $%d LIMIT $%d
     `, orderBy, argIndex, argIndex+1)
 
