@@ -11,9 +11,9 @@ type DebtorsService struct {
 	store store.Storage
 }
 
-func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, search *string, pagination types.Pagination) ([]map[string]interface{}, error) {
+func (s *DebtorsService) GetByCompanyId(ctx context.Context, companyId int64, search *string, dateSearch *string, pagination types.Pagination) ([]map[string]interface{}, error) {
 
-	debtors, err := s.store.Debtors.GetByCompanyId(ctx, companyId, search, pagination)
+	debtors, err := s.store.Debtors.GetByCompanyId(ctx, companyId, search, dateSearch, pagination)
 	if err != nil {
 		return nil, err
 	}

@@ -112,6 +112,8 @@ func (app *application) UpdateDebtsHandler(w http.ResponseWriter, r *http.Reques
 func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
 	app.LoadPaginationInfo(r, r.Context())
 	search := r.URL.Query().Get("search")
+	date := r.URL.Query().Get("date")
+
 	var textSeach *string
 	if search == "" {
 		textSeach = nil
@@ -119,7 +121,14 @@ func (app *application) GetDebtorsByCompanyIdHandler(w http.ResponseWriter, r *h
 		textSeach = &search
 	}
 
-	debtors, err := app.service.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r), textSeach, app.Pagination)
+	var dateSearch *string
+	if date == "" {
+		dateSearch = nil
+	} else {
+		dateSearch = &date
+	}
+
+	debtors, err := app.service.Debtors.GetByCompanyId(r.Context(), getIDFromContext(r), textSeach, dateSearch, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

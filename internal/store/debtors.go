@@ -74,71 +74,90 @@ func (s *DebtorsStorage) GetByCompanyId(
 	ctx context.Context,
 	companyId int64,
 	search *string,
+	dateFilter *string, // YYYY-MM-DD formatida, masalan "2025-02-18"
 	pagination types.Pagination,
 ) ([]Debtors, error) {
 
 	query := `
-		SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
-		FROM debtors
-		WHERE company_id = $1
-	`
+        SELECT id, balance, currency, user_id, phone, company_id, created_at, full_name
+        FROM debtors
+        WHERE company_id = $1
+    `
 
 	args := []interface{}{companyId}
 	argIndex := 2
 
-	// Add search if provided
-	if search != nil {
+	// 1. Search filtri (sizda bor edi, o'zgartirmaymiz)
+	if search != nil && *search != "" {
 		searchLike := "%" + *search + "%"
 		query += fmt.Sprintf(`
-			AND (
-				CAST(balance AS TEXT) ILIKE $%d OR
-				currency ILIKE $%d OR
-				phone ILIKE $%d OR
-				full_name ILIKE $%d
-			)
-		`, argIndex, argIndex, argIndex, argIndex)
-
+            AND (
+                CAST(balance AS TEXT) ILIKE $%d OR
+                currency ILIKE $%d OR
+                phone ILIKE $%d OR
+                full_name ILIKE $%d
+            )
+        `, argIndex, argIndex, argIndex, argIndex)
 		args = append(args, searchLike)
 		argIndex++
 	}
 
-	// Add order, offset, limit
+	// 2. created_at bo‘yicha filtr (faqat bitta kun)
+	if dateFilter != nil && *dateFilter != "" {
+		// PostgreSQLda ::date operator yordamida faqat sana qismini solishtiramiz
+		query += fmt.Sprintf(" AND created_at::date = $%d", argIndex)
+		args = append(args, *dateFilter) // "2025-02-18"
+		argIndex++
+	}
+
+	// 3. Order by + pagination
+	orderBy := pagination.OrderBy
+	if orderBy == "" {
+		orderBy = "created_at DESC" // default: eng yangi created birinchi
+	}
+
 	query += fmt.Sprintf(`
-		ORDER BY `+pagination.OrderBy+` 
-		OFFSET %d LIMIT %d
-	`, pagination.Offset, pagination.Limit)
+        ORDER BY %s 
+        OFFSET $%d LIMIT $%d
+    `, orderBy, argIndex, argIndex+1)
+
+	args = append(args, pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
-	var credits []Debtors
+	var debtors []Debtors
 
 	for rows.Next() {
-		var credit Debtors
+		var d Debtors
 		err := rows.Scan(
-			&credit.ID,
-			&credit.Balance,
-			&credit.Currency,
-			&credit.UserID,
-			&credit.Phone,
-			&credit.CompanyID,
-			&credit.CreatedAt,
-			&credit.FullName,
+			&d.ID,
+			&d.Balance,
+			&d.Currency,
+			&d.UserID,
+			&d.Phone,
+			&d.CompanyID,
+			&d.CreatedAt,
+			&d.FullName,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scan failed: %w", err)
 		}
 
 		loc, _ := time.LoadLocation("Asia/Tashkent")
-		credit.CreatedAtFormatted = credit.CreatedAt.In(loc).Format("2006-01-02 15:04:05")
+		d.CreatedAtFormatted = d.CreatedAt.In(loc).Format("2006-01-02 15:04:05")
 
-		credits = append(credits, credit)
+		debtors = append(debtors, d)
 	}
 
-	return credits, nil
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows error: %w", err)
+	}
+
+	return debtors, nil
 }
 
 func (s *DebtorsStorage) GetByBalanceInfo(ctx context.Context, companyId int64) ([]map[string]interface{}, error) {
