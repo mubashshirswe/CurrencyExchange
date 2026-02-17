@@ -81,7 +81,6 @@ func (s *DebtorsStorage) GetByCompanyId(
 	query := `
         SELECT DISTINCT d.id, d.balance, d.currency, d.user_id, d.phone, d.company_id, d.created_at, d.full_name
         FROM debtors d
-        JOIN debts db ON d.id = db.debtor_id
         WHERE d.company_id = $1
     `
 
@@ -105,7 +104,7 @@ func (s *DebtorsStorage) GetByCompanyId(
 
 	// Date filter on debt creation date
 	if dateFilter != nil && *dateFilter != "" {
-		query += fmt.Sprintf(" AND db.created_at::date = $%d", argIndex)
+		query += fmt.Sprintf(" AND d.created_at::date = $%d", argIndex)
 		args = append(args, *dateFilter)
 		argIndex++
 	}
