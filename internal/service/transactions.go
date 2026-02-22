@@ -581,7 +581,7 @@ func (s *TransactionService) Archived(ctx context.Context, pagination types.Pagi
 }
 
 func (s *TransactionService) GetInfos(ctx context.Context, companyId int64, pagination types.Pagination) ([]map[string]interface{}, error) {
-	trans, err := s.store.Transactions.GetByField(ctx, "delivered_company_id", companyId, pagination)
+	trans, err := s.store.Transactions.GetInfos(ctx, companyId)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR OCCURRED WHILE Transactions.GetByField %v", err)
 	}
@@ -602,15 +602,13 @@ func (s *TransactionService) GetInfos(ctx context.Context, companyId int64, pagi
 	}
 
 	for _, tran := range trans {
-		if tran.Status == TRANSACTION_STATUS_PENDING {
-			if tran.Type == TYPE_SELL {
-				for _, tr := range tran.DeliveredOutcomes {
-					getCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
-				}
-			} else {
-				for _, tr := range tran.DeliveredOutcomes {
-					giveCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
-				}
+		if tran.Type == TYPE_SELL {
+			for _, tr := range tran.DeliveredOutcomes {
+				getCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
+			}
+		} else {
+			for _, tr := range tran.DeliveredOutcomes {
+				giveCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
 			}
 		}
 	}

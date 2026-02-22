@@ -242,6 +242,22 @@ func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, f
 	return s.ConvertRowsToObject(rows, err)
 }
 
+func (s *TransactionStorage) GetInfos(ctx context.Context, companyId int64) ([]Transaction, error) {
+	query := `
+				SELECT id, service_fee, received_incomes, delivered_outcomes,
+	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
+				FROM transactions WHERE delivered_company_id = $1 AND status = $2
+			`
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		companyId,
+		STATUS_CREATED,
+	)
+
+	return s.ConvertRowsToObject(rows, err)
+}
+
 func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
 	query := `
 				SELECT id, service_fee, received_incomes, delivered_outcomes,
