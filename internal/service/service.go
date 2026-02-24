@@ -43,7 +43,7 @@ type Service struct {
 		PerformTransaction(context.Context, *store.Transaction) error
 		CompleteTransaction(context.Context, types.TransactionComplete) error
 		GetByCompanyId(context.Context, int64, types.Pagination) ([]map[string]interface{}, error)
-		GetInfos(context.Context, int64, types.Pagination) ([]map[string]interface{}, error)
+		GetInfos(ctx context.Context, date string) ([]store.CompanyAmount, error)
 		Archived(context.Context, types.Pagination) ([]map[string]interface{}, error)
 		Update(context.Context, *store.Transaction) error
 		Delete(context.Context, *int64) error

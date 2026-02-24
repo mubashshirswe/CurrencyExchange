@@ -89,6 +89,7 @@ type Storage struct {
 		Delete(context.Context, *int64) error
 		GetByField(context.Context, string, any, types.Pagination) ([]Transaction, error)
 		GetInfos(ctx context.Context, companyId int64) ([]Transaction, error)
+		GetCompanyFinalAmounts(ctx context.Context, companyIDs []int64, date string) ([]CompanyAmount, error)
 		GetByFieldAndDate(context.Context, string, string, string, any, types.Pagination) ([]Transaction, error)
 		Archive(context.Context, int64) error
 		Archived(context.Context, types.Pagination) ([]Transaction, error)

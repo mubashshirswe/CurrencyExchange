@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
 
@@ -347,4 +348,115 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 	}
 
 	return transactions, nil
+}
+
+type CompanyAmount struct {
+	CompanyName    string
+	Currency       string
+	OlinganAmount  float64
+	BerilganAmount float64
+	Remain         float64
+}
+
+func (s *TransactionStorage) GetCompanyFinalAmounts(ctx context.Context, companyIDs []int64, date string) ([]CompanyAmount, error) {
+	query := `
+with all_outcomes as (
+    -- delivered_outcomes
+    select 
+        t.delivered_company_id as company_id,
+        t.type,
+        elem->>'delivered_currency' as currency,
+        (elem->>'delivered_amount')::numeric as delivered_amount,
+        0::numeric as received_amount,
+        t.created_at
+    from transactions t
+    cross join jsonb_array_elements(t.delivered_outcomes) as elem
+    where t.delivered_company_id = ANY($1) or t.received_company_id = ANY($1)
+
+    union all
+
+    -- received_incomes
+    select 
+        t.received_company_id as company_id,
+        t.type,
+        elem->>'received_currency' as currency,
+        0::numeric as delivered_amount,
+        (elem->>'received_amount')::numeric as received_amount,
+        t.created_at
+    from transactions t
+    cross join jsonb_array_elements(t.received_incomes) as elem
+    where t.delivered_company_id = ANY($1) or t.received_company_id = ANY($1)
+)
+select 
+    c.name as company_name,
+    a.currency,
+    
+    -- Olingan summalar (faqat date filter)
+    coalesce(sum(
+        case 
+            when a.created_at::date = $2 then
+                case 
+                    when a.type = 1 then a.delivered_amount
+                    when a.type = 2 then a.received_amount
+                    else 0
+                end
+            else 0
+        end
+    ),0) as olingan_amount,
+
+    -- Berilgan summalar (faqat date filter)
+    coalesce(sum(
+        case 
+            when a.created_at::date = $2 then
+                case 
+                    when a.type = 1 then a.received_amount
+                    when a.type = 2 then a.delivered_amount
+                    else 0
+                end
+            else 0
+        end
+    ),0) as berilgan_amount,
+
+    -- Qolgan summasi (barcha transactionlar)
+    coalesce(sum(
+        case 
+            when a.type = 1 then a.delivered_amount
+            when a.type = 2 then a.received_amount
+            else 0
+        end
+    ),0)
+    -
+    coalesce(sum(
+        case 
+            when a.type = 1 then a.received_amount
+            when a.type = 2 then a.delivered_amount
+            else 0
+        end
+    ),0) as remain
+
+from all_outcomes a
+join companies c on c.id = a.company_id
+group by a.company_id, c.name, a.currency
+order by a.company_id, a.currency;
+`
+
+	rows, err := s.db.QueryContext(ctx, query, pq.Array(companyIDs), date)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []CompanyAmount
+	for rows.Next() {
+		var ca CompanyAmount
+		if err := rows.Scan(&ca.CompanyName, &ca.Currency, &ca.OlinganAmount, &ca.BerilganAmount, &ca.Remain); err != nil {
+			return nil, err
+		}
+		results = append(results, ca)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }

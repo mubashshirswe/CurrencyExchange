@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
@@ -144,8 +145,7 @@ func (app *application) GetTransactionsCompanyIdHandler(w http.ResponseWriter, r
 }
 
 func (app *application) GetInfosByCompanyIdHandler(w http.ResponseWriter, r *http.Request) {
-	app.LoadPaginationInfo(r, r.Context())
-	transactions, err := app.service.Transactions.GetInfos(r.Context(), getIDFromContext(r), app.Pagination)
+	transactions, err := app.service.Transactions.GetInfos(r.Context(), chi.URLParam(r, "date"))
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return

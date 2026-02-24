@@ -123,7 +123,7 @@ func (app *application) mount() *chi.Mux {
 				r.Get("/show/process/{id}", app.GetTransactionsCompanyIdHandler)
 				r.Post("/archive", app.ArchiveTransactionsHandler)
 				r.Get("/archived", app.ArchivedTransactionsHandler)
-				r.Get("/show/info/{id}", app.GetInfosByCompanyIdHandler)
+				r.Get("/show/info/{date}", app.GetInfosByCompanyIdHandler)
 				r.Post("/fetch.by.field", app.GetTransactionsByFieldHandler)
 				r.Post("/fetch.by.field-and-date", app.GetTransactionsByFieldAndDateHandler)
 				r.Route("/{id}", func(r chi.Router) {

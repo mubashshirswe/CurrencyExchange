@@ -580,56 +580,13 @@ func (s *TransactionService) Archived(ctx context.Context, pagination types.Pagi
 	return response, nil
 }
 
-func (s *TransactionService) GetInfos(ctx context.Context, companyId int64, pagination types.Pagination) ([]map[string]interface{}, error) {
-	trans, err := s.store.Transactions.GetInfos(ctx, companyId)
+func (s *TransactionService) GetInfos(ctx context.Context, date string) ([]store.CompanyAmount, error) {
+	trans, err := s.store.Transactions.GetCompanyFinalAmounts(ctx, []int64{1, 2}, date)
 	if err != nil {
 		return nil, fmt.Errorf("ERROR OCCURRED WHILE Transactions.GetByField %v", err)
 	}
 
-	balances, err := s.store.Balances.GetByCompanyId(ctx, &companyId)
-	if err != nil {
-		return nil, fmt.Errorf("ERROR OCCURRED WHILE Balances.GetByCompanyId %v", err)
-	}
-
-	var response []map[string]interface{}
-	getCurrencies := make(map[string]int64)
-	giveCurrencies := make(map[string]int64)
-	currencies := make(map[string]int64)
-	free_currencies := make(map[string]int64)
-
-	for _, balance := range balances {
-		currencies[balance.Currency] += balance.Balance
-	}
-
-	for _, tran := range trans {
-		if tran.Type == TYPE_SELL {
-			for _, tr := range tran.DeliveredOutcomes {
-				getCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
-			}
-		} else {
-			for _, tr := range tran.DeliveredOutcomes {
-				giveCurrencies[tr.DeliveredCurrency] += tr.DeliveredAmount
-			}
-		}
-	}
-
-	for i, cur := range currencies {
-		getOne := GetOne(getCurrencies, i)
-		giveOne := GetOne(giveCurrencies, i)
-		cur += getOne
-		cur -= giveOne
-
-		free_currencies[i] += cur
-	}
-
-	response = append(response, map[string]interface{}{
-		"balances":       currencies,
-		"get_currencies": getCurrencies,
-		"giveCurrencies": giveCurrencies,
-		"free_balances":  free_currencies,
-	})
-
-	return response, nil
+	return trans, nil
 }
 
 func GetOne(ids map[string]int64, id string) int64 {
