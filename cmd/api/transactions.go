@@ -112,13 +112,19 @@ func (app *application) CompleteTransactionHandler(w http.ResponseWriter, r *htt
 
 func (app *application) GetTransactionsByFieldHandler(w http.ResponseWriter, r *http.Request) {
 	app.LoadPaginationInfo(r, r.Context())
+	src := r.URL.Query().Get("search")
+	var search *string
+	if src != "" {
+		search = &src
+	}
+
 	var payload FieldRequestPayload
 	if err := readJSON(w, r, &payload); err != nil {
 		app.badRequestResponse(w, r, err)
 		return
 	}
 
-	transactions, err := app.service.Transactions.GetByField(r.Context(), payload.Search, payload.FieldName, payload.FieldValue, app.Pagination)
+	transactions, err := app.service.Transactions.GetByField(r.Context(), search, payload.FieldName, payload.FieldValue, app.Pagination)
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
