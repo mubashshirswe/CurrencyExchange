@@ -14,6 +14,7 @@ import (
 
 type Transaction struct {
 	ID                 int64                     `json:"id"`
+	Number             int64                     `json:"number"`
 	ReceivedCompanyId  int64                     `json:"received_company_id"`
 	ReceivedUserId     int64                     `json:"received_user_id"`
 	ReceivedIncomes    []types.ReceivedIncomes   `json:"received_incomes"`
@@ -165,7 +166,7 @@ func (s *TransactionStorage) Update(ctx context.Context, tr *Transaction) error 
 
 func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transaction, error) {
 	query := `
-				SELECT id, service_fee, received_incomes, delivered_outcomes,
+				SELECT id, number, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE id = $1 AND status = $2 ORDER BY created_at DESC
 			`
@@ -181,6 +182,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 		STATUS_CREATED,
 	).Scan(
 		&tr.ID,
+		&tr.Number,
 		&tr.ServiceFee,
 		&receivedIncomesJSON,
 		&deliveredOutcomesJSON,
@@ -214,7 +216,7 @@ func (s *TransactionStorage) GetById(ctx context.Context, id int64) (*Transactio
 
 func (s *TransactionStorage) Archived(ctx context.Context, pagination types.Pagination) ([]Transaction, error) {
 	query := `
-				SELECT id, service_fee, received_incomes, delivered_outcomes,
+				SELECT id, number, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE status = $1   ORDER BY created_at DESC ` + fmt.Sprintf("OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
@@ -227,25 +229,67 @@ func (s *TransactionStorage) Archived(ctx context.Context, pagination types.Pagi
 	return s.ConvertRowsToObject(rows, err)
 }
 
-func (s *TransactionStorage) GetByField(ctx context.Context, fieldName string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
+func (s *TransactionStorage) GetByField(
+	ctx context.Context,
+	search *string,
+	fieldName string,
+	fieldValue any,
+	pagination types.Pagination,
+) ([]Transaction, error) {
+
+	// 🔒 whitelist (MUHIM!)
+	allowedFields := map[string]bool{
+		"id":                   true,
+		"received_user_id":     true,
+		"delivered_user_id":    true,
+		"received_company_id":  true,
+		"delivered_company_id": true,
+	}
+
+	if !allowedFields[fieldName] {
+		return nil, fmt.Errorf("invalid field name")
+	}
+
+	args := []any{fieldValue, STATUS_ARCHIVED}
+	argIndex := 4
+
 	query := `
-				SELECT id, service_fee, received_incomes, delivered_outcomes,
-	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
-				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND status != $2   ORDER BY created_at DESC ` + fmt.Sprintf("OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
+		SELECT id, number, service_fee, received_incomes, delivered_outcomes,
+		received_company_id, delivered_company_id, received_user_id, delivered_user_id,
+		phone, details, status, type, created_at
+		FROM transactions
+		WHERE ` + fieldName + ` = $1 AND status != $2
+	`
 
-	rows, err := s.db.QueryContext(
-		ctx,
-		query,
-		fieldValue,
-		STATUS_ARCHIVED,
-	)
+	// 🔍 SEARCH FILTER
+	if search != nil && *search != "" {
+		query += fmt.Sprintf(`
+			AND (
+				details ILIKE $%d 
+				OR phone ILIKE $%d
+				OR number ILIKE $%d
+				OR CAST(service_fee AS TEXT) ILIKE $%d
+			)
+		`, argIndex, argIndex+1, argIndex+2, argIndex+3)
 
+		searchValue := "%" + *search + "%"
+		args = append(args, searchValue, searchValue, searchValue)
+		argIndex += 3
+	}
+
+	// 📄 PAGINATION
+	query += fmt.Sprintf(`
+		ORDER BY created_at DESC
+		OFFSET %d LIMIT %d
+	`, pagination.Offset, pagination.Limit)
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	return s.ConvertRowsToObject(rows, err)
 }
 
 func (s *TransactionStorage) GetInfos(ctx context.Context, companyId int64) ([]Transaction, error) {
 	query := `
-				SELECT id, service_fee, received_incomes, delivered_outcomes,
+				SELECT id, number, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE delivered_company_id = $1 AND status = $2
 			`
@@ -261,7 +305,7 @@ func (s *TransactionStorage) GetInfos(ctx context.Context, companyId int64) ([]T
 
 func (s *TransactionStorage) GetByFieldAndDate(ctx context.Context, fieldName, from, to string, fieldValue any, pagination types.Pagination) ([]Transaction, error) {
 	query := `
-				SELECT id, service_fee, received_incomes, delivered_outcomes,
+				SELECT id, number, service_fee, received_incomes, delivered_outcomes,
 	 			received_company_id, delivered_company_id, received_user_id, delivered_user_id, phone, details, status, type, created_at
 				FROM transactions WHERE ` + fmt.Sprintf("%v", fieldName) + ` = $1 AND created_at BETWEEN $2 AND $3 AND status != $4  ` + fmt.Sprintf("ORDER BY created_at DESC OFFSET %v LIMIT %v", pagination.Offset, pagination.Limit)
 
@@ -315,6 +359,7 @@ func (s *TransactionStorage) ConvertRowsToObject(rows *sql.Rows, err error) ([]T
 		tr := &Transaction{}
 		err := rows.Scan(
 			&tr.ID,
+			&tr.Number,
 			&tr.ServiceFee,
 			&receivedIncomesJSON,
 			&deliveredOutcomesJSON,

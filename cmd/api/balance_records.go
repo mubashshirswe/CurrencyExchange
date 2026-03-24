@@ -10,6 +10,7 @@ import (
 type FieldRequestPayload struct {
 	From       *string `json:"from"`
 	To         *string `json:"to"`
+	Search     *string `json:"search"`
 	FieldName  string  `json:"field_name"`
 	FieldValue any     `json:"field_value"`
 }
