@@ -490,6 +490,7 @@ func (s *TransactionService) GetByField(ctx context.Context, search *string, fie
 
 		res := map[string]interface{}{
 			"id":                   tran.ID,
+			"number":               tran.Number,
 			"received_company_id":  tran.ReceivedCompanyId,
 			"received_company":     receivedCompanyName,
 			"received_user_id":     tran.ReceivedUserId,
