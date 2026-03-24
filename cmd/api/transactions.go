@@ -114,7 +114,7 @@ func (app *application) GetTransactionsByFieldHandler(w http.ResponseWriter, r *
 	app.LoadPaginationInfo(r, r.Context())
 	src := r.URL.Query().Get("search")
 	var search *string
-	if src != "" {
+	if src != "" && src != "null" {
 		search = &src
 	}
 
