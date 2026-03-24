@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/lib/pq"
@@ -237,7 +238,6 @@ func (s *TransactionStorage) GetByField(
 	pagination types.Pagination,
 ) ([]Transaction, error) {
 
-	// 🔒 whitelist (MUHIM!)
 	allowedFields := map[string]bool{
 		"id":                   true,
 		"received_user_id":     true,
@@ -251,7 +251,7 @@ func (s *TransactionStorage) GetByField(
 	}
 
 	args := []any{fieldValue, STATUS_ARCHIVED}
-	argIndex := 4
+	argIndex := 3 // ✅ TO‘G‘RI
 
 	query := `
 		SELECT id, number, service_fee, received_incomes, delivered_outcomes,
@@ -261,27 +261,36 @@ func (s *TransactionStorage) GetByField(
 		WHERE ` + fieldName + ` = $1 AND status != $2
 	`
 
-	// 🔍 SEARCH FILTER
 	if search != nil && *search != "" {
 		query += fmt.Sprintf(`
 			AND (
 				details ILIKE $%d 
 				OR phone ILIKE $%d
-				OR number ILIKE $%d
+				OR CAST(number AS TEXT) ILIKE $%d
 				OR CAST(service_fee AS TEXT) ILIKE $%d
 			)
 		`, argIndex, argIndex+1, argIndex+2, argIndex+3)
 
 		searchValue := "%" + *search + "%"
-		args = append(args, searchValue, searchValue, searchValue)
-		argIndex += 3
+
+		// ✅ 4 TA PARAM
+		args = append(args, searchValue, searchValue, searchValue, searchValue)
+		argIndex += 4
+
+		// 🔥 BONUS: exact number search
+		if num, err := strconv.ParseInt(*search, 10, 64); err == nil {
+			query += fmt.Sprintf(` OR number = $%d`, argIndex)
+			args = append(args, num)
+			argIndex++
+		}
 	}
 
-	// 📄 PAGINATION
 	query += fmt.Sprintf(`
 		ORDER BY created_at DESC
-		OFFSET %d LIMIT %d
-	`, pagination.Offset, pagination.Limit)
+		OFFSET $%d LIMIT $%d
+	`, argIndex, argIndex+1)
+
+	args = append(args, pagination.Offset, pagination.Limit)
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	return s.ConvertRowsToObject(rows, err)
