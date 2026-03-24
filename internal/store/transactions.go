@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -237,6 +238,12 @@ func (s *TransactionStorage) GetByField(
 	fieldValue any,
 	pagination types.Pagination,
 ) ([]Transaction, error) {
+
+	if search != nil {
+		log.Printf("COME search param %v", *search)
+	} else {
+		log.Println("DO NOT COME search param")
+	}
 
 	allowedFields := map[string]bool{
 		"id":                   true,
