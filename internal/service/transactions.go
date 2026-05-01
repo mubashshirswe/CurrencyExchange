@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
+	"github.com/mubashshir3767/currencyExchange/internal/notify"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
@@ -17,7 +19,15 @@ const (
 )
 
 type TransactionService struct {
-	store store.Storage
+	store  store.Storage
+	notify notify.DeliveredUser
+}
+
+func NewTransactionService(store store.Storage, delivered notify.DeliveredUser) *TransactionService {
+	if delivered == nil {
+		delivered = notify.NoopDeliveredUser{}
+	}
+	return &TransactionService{store: store, notify: delivered}
 }
 
 func (s *TransactionService) PerformTransaction(ctx context.Context, transaction *store.Transaction) error {
@@ -83,7 +93,21 @@ func (s *TransactionService) PerformTransaction(ctx context.Context, transaction
 		}
 	}
 
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	if transaction.DeliveredUserId != nil {
+		uid := *transaction.DeliveredUserId
+		tid := transaction.ID
+		phone := transaction.Phone
+		details := transaction.Details
+		go func() {
+			ctxN, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+			defer cancel()
+			s.notify.NotifyPendingDelivery(ctxN, &uid, tid, phone, details)
+		}()
+	}
 	return nil
 }
 
@@ -158,7 +182,18 @@ func (s *TransactionService) CompleteTransaction(ctx context.Context, transactio
 		return fmt.Errorf("ERROR OCCURRED WHILE transactionsStorage.Update %v", err)
 	}
 
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	deliveredID := transaction.DeliveredUserId
+	tid := tran.ID
+	details := tran.Details
+	go func() {
+		ctxN, cancel := context.WithTimeout(context.Background(), 25*time.Second)
+		defer cancel()
+		s.notify.NotifyDeliveryCompleted(ctxN, deliveredID, tid, details)
+	}()
 	return nil
 }
 

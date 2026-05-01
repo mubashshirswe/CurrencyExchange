@@ -69,6 +69,15 @@ func (app *application) mount() *chi.Mux {
 			r.Put("/{id}", app.UpdateUserHandler)
 			r.Delete("/{id}", app.DeleteUserHandler)
 
+			r.Route("/sessions", func(r chi.Router) {
+				r.Post("/", app.UpsertUserSessionHandler)
+				r.Get("/", app.ListUserSessionsHandler)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Put("/", app.UpdateUserSessionHandler)
+					r.Delete("/", app.DeleteUserSessionHandler)
+				})
+			})
+
 			r.Route("/balances", func(r chi.Router) {
 				r.Post("/", app.CreateBalanceHandler)
 				r.Get("/all", app.GetAllBalanceHandler)

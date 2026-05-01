@@ -6,6 +6,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/mubashshir3767/currencyExchange/internal/db"
 	"github.com/mubashshir3767/currencyExchange/internal/env"
+	"github.com/mubashshir3767/currencyExchange/internal/fcm"
+	"github.com/mubashshir3767/currencyExchange/internal/notify"
 	"github.com/mubashshir3767/currencyExchange/internal/service"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/store/cache"
@@ -52,7 +54,18 @@ func main() {
 	log.Println("DATABASE HAS BEEN SUCCESSFULLY ESTABLISHED")
 
 	store := store.NewStorage(db)
-	service := service.NewService(store)
+
+	var delivered notify.DeliveredUser = notify.NoopDeliveredUser{}
+	if creds := env.GetString("FIREBASE_CREDENTIALS_PATH", ""); creds != "" {
+		n, err := fcm.NewDeliveredNotifier(creds, store)
+		if err != nil {
+			log.Printf("FCM notifier disabled: %v", err)
+		} else {
+			delivered = n
+		}
+	}
+
+	service := service.NewService(store, delivered)
 	cacheStore := cache.NewRedisStorage(rdb)
 
 	app := application{

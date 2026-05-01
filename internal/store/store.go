@@ -102,6 +102,16 @@ type Storage struct {
 		Update(context.Context, *Company) error
 		Delete(context.Context, *int64) error
 	}
+
+	UserSessions interface {
+		Upsert(context.Context, *UserSession) error
+		ListByUserID(context.Context, int64) ([]UserSession, error)
+		GetByIDForUser(context.Context, int64, int64) (*UserSession, error)
+		UpdateFCM(context.Context, int64, int64, string, *string) error
+		Delete(context.Context, int64, int64) error
+		FCMTokensByUserID(context.Context, int64) ([]string, error)
+		DeleteByFCMToken(context.Context, string) error
+	}
 }
 
 func NewStorage(db *sql.DB) Storage {
@@ -117,6 +127,7 @@ func NewStorage(db *sql.DB) Storage {
 		Balances:       &BalanceStorage{db: dbwrapper},
 		Companies:      &CompanyStorage{db: dbwrapper},
 		BalanceRecords: &BalanceRecordStorage{db: dbwrapper},
+		UserSessions:   &UserSessionStorage{db: dbwrapper},
 	}
 }
 

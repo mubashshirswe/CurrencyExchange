@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 
+	"github.com/mubashshir3767/currencyExchange/internal/notify"
 	"github.com/mubashshir3767/currencyExchange/internal/store"
 	"github.com/mubashshir3767/currencyExchange/internal/types"
 )
@@ -50,13 +51,13 @@ type Service struct {
 	}
 }
 
-func NewService(store store.Storage) Service {
+func NewService(store store.Storage, delivered notify.DeliveredUser) Service {
 	return Service{
 		Debtors:        &DebtorsService{store: store},
 		Balances:       &BalanceService{store: store},
 		Exchanges:      &ExchangeService{store: store},
 		BalanceRecords: &BalanceRecordService{store: store},
-		Transactions:   &TransactionService{store: store},
+		Transactions:   NewTransactionService(store, delivered),
 		Debts:          &DebtsService{store: store},
 	}
 }
