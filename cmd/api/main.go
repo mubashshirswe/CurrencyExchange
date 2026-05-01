@@ -14,9 +14,9 @@ import (
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("failed to load .env file")
+	// Local: .env fayl; server/Docker: o'zgaruvchilar environment orqali (fayl shart emas)
+	if err := godotenv.Load(); err != nil {
+		log.Printf("dotenv: %v — faqat muhit o'zgaruvchilari ishlatiladi", err)
 	}
 
 	cfg := config{

@@ -1,5 +1,8 @@
 # Use the official Go image as the base image
-FROM golang:1.24 AS builder
+FROM golang:1.24-bookworm AS builder
+
+# Align toolchain with go.mod (e.g. go 1.25+) inside CI/build
+ENV GOTOOLCHAIN=auto
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
