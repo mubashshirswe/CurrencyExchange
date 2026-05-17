@@ -1,5 +1,8 @@
-# Kanonik server fayl: deploy/server/docker-compose.yml (shu bilan bir xil).
-# Serverda ishlatish: deploy/server/ papkasidagi fayllar yoki Actions orqali sync.
+# Production server — kod kloni va Dockerfile shart emas, faqat image + .env.
+#
+# Ma'lumotlar DOIMIY: currency-exchange_pgdata / _redisdata volume'larda.
+# Deploy faqat API konteynerini yangilaydi; DB/Redis qayta yaratilmaydi.
+# HECH QACHON: docker compose down -v  (volume o'chadi, barcha data yo'qoladi)
 
 name: currency-exchange
 
@@ -7,6 +10,7 @@ services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    # Deploy skripti db ni qayta yaratmaydi — volume saqlanadi
     stop_grace_period: 30s
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app}
@@ -49,8 +53,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+    # FCM: .env da FIREBASE_CREDENTIALS_PATH=/secrets/firebase.json va quyidagini yoqing:
+    # volumes:
+    #   - ./secrets/firebase-adminsdk.json:/secrets/firebase.json:ro
 
 volumes:
+  # Aniq nom — compose papkasi o'zgarsa ham volume o'chmaydi
   pgdata:
     name: currency-exchange_pgdata
   redisdata:

@@ -1,0 +1,134 @@
+# main/master ga push → test → GHCR image → serverda docker compose pull/up
+#
+# GitHub repo Settings → Secrets and variables → Actions:
+#   SSH_HOST          — server IP yoki domen
+#   SSH_USER          — masalan deploy
+#   SSH_PRIVATE_KEY   — SSH private key (PEM)
+#   DEPLOY_PATH       — serverdagi papka, masalan /app/backend/currency-exchange
+#   GHCR_TOKEN        — (ixtiyoriy) private image uchun PAT (read:packages)
+#
+# Serverda bir marta: cp env.example .env && ./scripts/deploy.sh
+# Firebase: docker-compose.override.yml (Actions yubormaydi — serverda qoladi)
+
+name: Deploy
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Format
+        run: |
+          if [ -n "$(gofmt -l .)" ]; then
+            echo "Run: gofmt -w on:"
+            gofmt -l .
+            exit 1
+          fi
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -count=1 -short ./...
+
+      - name: Build API
+        run: go build -o /dev/null ./cmd/api
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image_name.outputs.image_name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Image name (GHCR requires lowercase)
+        id: image_name
+        run: |
+          IMAGE="${REGISTRY}/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')"
+          echo "image_name=${IMAGE}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image_name.outputs.image_name }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy compose and deploy script to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          source: "deploy/server/docker-compose.yml,deploy/server/env.example,deploy/server/docker-compose.override.example.yml,deploy/server/scripts/deploy.sh,deploy/server/scripts/bootstrap.sh,deploy/server/scripts/verify.sh"
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 2
+
+      - name: Run deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          GHCR_USER: ${{ github.repository_owner }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          envs: GHCR_TOKEN,GHCR_USER
+          script: |
+            set -e
+            cd "${{ secrets.DEPLOY_PATH }}"
+            chmod +x scripts/deploy.sh
+            ./scripts/deploy.sh

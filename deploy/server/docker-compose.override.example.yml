@@ -1,0 +1,10 @@
+# Firebase uchun: nusxa oling va serverda saqlang (Actions buni yubormaydi, o'chirilmaydi):
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+#
+# .env:
+#   FIREBASE_CREDENTIALS_PATH=/secrets/firebase.json
+
+services:
+  api:
+    volumes:
+      - ./secrets/firebase-adminsdk.json:/secrets/firebase.json:ro

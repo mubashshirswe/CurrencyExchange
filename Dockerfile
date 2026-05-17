@@ -37,12 +37,15 @@ ENV APP_ENV=production \
 # Set the Current Working Directory inside the container
 WORKDIR /app
 
-# Copy the prebuilt binary file from the builder
+# Copy the prebuilt binary, migrate CLI, and SQL migrations
 COPY --from=builder /app/currency_exchange .
+COPY --from=builder /go/bin/migrate /usr/local/bin/migrate
+COPY --from=builder /app/cmd/migrate/migrations /migrations
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
 
-# Expose the application port
 EXPOSE 8080
 
-# Command to run the executable
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["./currency_exchange"]
 

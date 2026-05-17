@@ -1,0 +1,13 @@
+.git
+.github
+.env
+.env.*
+*.md
+LICENSE
+.air.toml
+bin/
+tmp/
+secrets/
+*.json
+!go.mod
+!go.sum

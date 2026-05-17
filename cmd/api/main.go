@@ -16,7 +16,7 @@ import (
 func main() {
 	// Local: .env fayl; server/Docker: o'zgaruvchilar environment orqali (fayl shart emas)
 	if err := godotenv.Load(); err != nil {
-		log.Printf("dotenv: %v — faqat muhit o'zgaruvchilari ishlatiladi", err)
+		log.Printf("dotenv: %v (using process environment)", err)
 	}
 
 	cfg := config{

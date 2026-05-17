@@ -26,9 +26,9 @@ Thumbs.db
 # Environment/config
 # docker-compose*.yml
 .env
-currency-exchange-bec5e-firebase-adminsdk-fbsvc-15e3f06f93.json
 .env.local
 config.yaml
 
 # Cache
 *.cache
+currency-exchange-bec5e-firebase-adminsdk-fbsvc-15e3f06f93.json

@@ -9,6 +9,7 @@ on:
   push:
     tags: ["v*"]
   workflow_dispatch:
+  # Release taglar uchun; kundalik deploy → deploy.yml (main push)
 
 permissions:
   contents: read
