@@ -16,11 +16,15 @@ set -a
 source .env
 set +a
 
+# shellcheck disable=SC1091
+source "$(dirname "$0")/lib/load-db-env.sh"
+load_db_env
+
 STAMP="$(date +%Y%m%d-%H%M%S)"
 OUT="backups/db-${STAMP}.sql.gz"
 
 echo "Backup: ${POSTGRES_DB} -> ${OUT}"
-docker compose exec -T db pg_dump -U "${POSTGRES_USER:-app}" -d "${POSTGRES_DB:-currency_exchange}" --no-owner --no-acl \
+docker compose exec -T db pg_dump -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" --no-owner --no-acl \
   | gzip -9 > "${OUT}"
 
 ls -lh "${OUT}"
