@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/mubashshir3767/currencyExchange/internal/db"
@@ -19,10 +21,15 @@ func main() {
 		log.Printf("dotenv: %v (using process environment)", err)
 	}
 
+	if len(os.Args) > 1 && os.Args[1] == "-print-db-url" {
+		fmt.Println(env.PostgresURL())
+		return
+	}
+
 	cfg := config{
 		addr: env.GetString("ADDR", ":8080"),
 		db: dbConfig{
-			addr:         env.GetString("DB_ADDR", "postgres://qweqweqeqe12312314:qweqweqeqe12312314@localhost:5432/currency_exchange?sslmode=disable"),
+			addr:         env.PostgresURL(),
 			maxOpenConns: env.GetInt("MAX_OPEN_CONNS", 50),
 			maxIdleConns: env.GetInt("MAX_IDLE_CONNS", 50),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15m"),

@@ -30,12 +30,16 @@ services:
   api:
     image: ${API_IMAGE:?set API_IMAGE in .env}
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "${APP_PORT:-8080}:8080"
     environment:
       ADDR: ":8080"
       ENV: ${ENV:-PROD}
-      DB_ADDR: postgres://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-currency_exchange}?sslmode=disable
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_SSLMODE: disable
       REDIS_ADDR: redis:6379
       REDIS_PW: ${REDIS_PW:-}
       REDIS_DB: ${REDIS_DB:-0}

@@ -1,14 +1,11 @@
-# main/master ga push → test → GHCR image → serverda docker compose pull/up
+# push → test + GHCR image
+# SSH deploy: workflow_dispatch da "deploy"=true YOKI repo Variables: AUTO_DEPLOY=true
 #
-# GitHub repo Settings → Secrets and variables → Actions:
-#   SSH_HOST          — server IP yoki domen
-#   SSH_USER          — masalan deploy
-#   SSH_PRIVATE_KEY   — SSH private key (PEM)
-#   DEPLOY_PATH       — serverdagi papka, masalan /app/backend/currency-exchange
-#   GHCR_TOKEN        — (ixtiyoriy) private image uchun PAT (read:packages)
+# SSH timeout (dial tcp i/o timeout) = Security Group / firewall 22-port yopiq
+#   SSH_HOST = Public IP (172.31.x.x emas)
+#   AWS: Inbound SSH 22 from 0.0.0.0/0
 #
-# Serverda bir marta: cp env.example .env && ./scripts/deploy.sh
-# Firebase: docker-compose.override.yml (Actions yubormaydi — serverda qoladi)
+# SSH siz deploy: serverda ./scripts/pull-latest.sh (cron)
 
 name: Deploy
 
@@ -16,6 +13,11 @@ on:
   push:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      deploy:
+        description: Serverga SSH deploy (SCP + deploy.sh)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,8 +64,6 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    outputs:
-      image: ${{ steps.image_name.outputs.image_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -101,18 +101,41 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: |
+      (github.event_name == 'workflow_dispatch' && inputs.deploy == true) ||
+      vars.AUTO_DEPLOY == 'true'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Copy compose and deploy script to server
+      - name: Prepare deploy directory on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 120s
+          script: |
+            set -e
+            DEPLOY="${{ secrets.DEPLOY_PATH }}"
+            mkdir -p "$DEPLOY/scripts" "$DEPLOY/backups"
+            if [ ! -w "$DEPLOY" ]; then
+              sudo chown -R "$(whoami):$(whoami)" "$DEPLOY"
+            fi
+            chmod u+w "$DEPLOY" "$DEPLOY/scripts" 2>/dev/null || true
+            sudo usermod -aG docker "$(whoami)" 2>/dev/null || true
+
+      - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
-          source: "deploy/server/docker-compose.yml,deploy/server/env.example,deploy/server/docker-compose.override.example.yml,deploy/server/scripts/deploy.sh,deploy/server/scripts/bootstrap.sh,deploy/server/scripts/verify.sh"
+          timeout: 120s
+          command_timeout: 10m
+          overwrite: true
+          source: "deploy/server/docker-compose.yml,deploy/server/env.example,deploy/server/docker-compose.override.example.yml,deploy/server/scripts/deploy.sh,deploy/server/scripts/bootstrap.sh,deploy/server/scripts/verify.sh,deploy/server/scripts/backup-db.sh,deploy/server/scripts/restore-db.sh,deploy/server/scripts/pull-latest.sh"
           target: ${{ secrets.DEPLOY_PATH }}
           strip_components: 2
 
@@ -126,9 +149,11 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
+          timeout: 120s
+          command_timeout: 10m
           envs: GHCR_TOKEN,GHCR_USER
           script: |
             set -e
             cd "${{ secrets.DEPLOY_PATH }}"
-            chmod +x scripts/deploy.sh
+            chmod +x scripts/*.sh
             ./scripts/deploy.sh
