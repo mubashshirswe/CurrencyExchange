@@ -23,10 +23,8 @@ if [ -f .env ]; then
   grep -q '^POSTGRES_PASSWORD=' .env && pass "POSTGRES_PASSWORD" || fail "POSTGRES_PASSWORD .env da yo'q"
 fi
 
-if [ -f docker-compose.override.yml ]; then
-  pass "docker-compose.override.yml (Firebase va boshqalar)"
-elif grep -q 'FIREBASE_CREDENTIALS_PATH=/secrets' .env 2>/dev/null; then
-  warn "FCM yoqilgan, lekin docker-compose.override.yml yo'q"
+if grep -q 'firebase-adminsdk.json:/secrets/firebase.json' docker-compose.yml 2>/dev/null; then
+  pass "docker-compose.yml (Firebase volume)"
 fi
 
 if [ -f secrets/firebase-adminsdk.json ]; then

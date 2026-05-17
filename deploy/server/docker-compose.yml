@@ -57,9 +57,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    # FCM: .env da FIREBASE_CREDENTIALS_PATH=/secrets/firebase.json va quyidagini yoqing:
-    # volumes:
-    #   - ./secrets/firebase-adminsdk.json:/secrets/firebase.json:ro
+    # FCM: .env da FIREBASE_CREDENTIALS_PATH=/secrets/firebase.json
+    # secrets/firebase-adminsdk.json bo'lmasa volume mount xato bermasligi uchun fayl mavjud bo'lsin
+    volumes:
+      - ./secrets/firebase-adminsdk.json:/secrets/firebase.json:ro
 
 volumes:
   # Aniq nom — compose papkasi o'zgarsa ham volume o'chmaydi

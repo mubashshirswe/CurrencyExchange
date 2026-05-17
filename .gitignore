@@ -29,6 +29,9 @@ Thumbs.db
 .env.local
 config.yaml
 
+# DB dumps (make db-backup)
+backups/
+
 # Cache
 *.cache
 currency-exchange-bec5e-firebase-adminsdk-fbsvc-15e3f06f93.json

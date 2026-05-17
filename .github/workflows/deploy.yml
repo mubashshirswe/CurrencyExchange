@@ -127,7 +127,7 @@ jobs:
           timeout: 120s
           command_timeout: 10m
           overwrite: true
-          source: "deploy/server/docker-compose.yml,deploy/server/env.example,deploy/server/docker-compose.override.example.yml,deploy/server/scripts/deploy.sh,deploy/server/scripts/bootstrap.sh,deploy/server/scripts/verify.sh,deploy/server/scripts/backup-db.sh,deploy/server/scripts/restore-db.sh,deploy/server/scripts/pull-latest.sh"
+          source: "deploy/server/docker-compose.yml,deploy/server/env.example,deploy/server/restore.sh,deploy/server/scripts/deploy.sh,deploy/server/scripts/bootstrap.sh,deploy/server/scripts/verify.sh,deploy/server/scripts/backup-db.sh,deploy/server/scripts/restore-db.sh,deploy/server/scripts/pull-latest.sh,deploy/server/scripts/lib/load-db-env.sh,deploy/server/scripts/lib/docker-db.sh"
           target: ${{ secrets.DEPLOY_PATH }}
           strip_components: 2
 
