@@ -1,12 +1,3 @@
-# push → test + GHCR image
-# SSH deploy: workflow_dispatch da "deploy"=true YOKI repo Variables: AUTO_DEPLOY=true
-#
-# SSH timeout (dial tcp i/o timeout) = Security Group / firewall 22-port yopiq
-#   SSH_HOST = Public IP (172.31.x.x emas)
-#   AWS: Inbound SSH 22 from 0.0.0.0/0
-#
-# SSH siz deploy: serverda ./scripts/pull-latest.sh (cron)
-
 name: Deploy
 
 on:
@@ -29,6 +20,7 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
+  AUTO_DEPLOY: ${{ vars.AUTO_DEPLOY }}
 
 jobs:
   test:
