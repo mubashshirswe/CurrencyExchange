@@ -13,7 +13,8 @@ COPY go.mod go.sum ./
 # Download all dependencies. Dependencies will be cached if go.mod and go.sum files are unchanged
 RUN go mod download
 
-RUN go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+# postgres driver migrate binary ichiga build qilinadi (aks holda "unknown driver postgres")
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
 # Copy the source code to the container
 COPY . .
